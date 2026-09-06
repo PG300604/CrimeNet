@@ -76,8 +76,6 @@ if args.data:
 
 # INTERNAL DATASETS
 DATASETS = [
-    {'id': 'roxsd_drug', 'name': 'Drug Network', 'path': '{}/datasets/preprocessed/roxsd_drug.json'.format(path2root)},
-    {'id': 'roxsd_money', 'name': 'Money Network', 'path': '{}/datasets/preprocessed/roxsd_money.json'.format(path2root)},
     {'id': '911_hijackers', 'name': '911 Hijackers', 'path': '{}/datasets/preprocessed/911_hijackers.json'.format(path2root)},
     {'id': 'israel_lea_case1', 'name': 'Isreal Lea Case 1', 'path': '{}/datasets/preprocessed/israel_lea_case1_speakers.json'.format(path2root)},
     {'id': 'israel_lea_case2', 'name': 'Isreal Lea Case 2', 'path': '{}/datasets/preprocessed/israel_lea_case2_speakers.json'.format(path2root)},
@@ -326,6 +324,9 @@ def main_callback(*args):
     ### LOAD NETWORK BUTTON ###
     # When 'Load Network' button is pressed: Load network and initialize drop down menus.
     elif context.triggered[0]['prop_id'].split('.')[0] == 'load-network-button':
+        if not callback_kwargs.get('network_selection'):
+            message = dash_formatter.dash_message('Please choose a network from the dropdown first.', success=False)
+            return output(message=message)
         if not active_network.elements:
             try:
                 selected_entities = resolve_selected_entities(callback_kwargs['entities'])
@@ -709,6 +710,7 @@ def main_callback(*args):
                       show_edit_dialog=False, show_add_dialog=False, show_delete_dialog=False,
                       show_merge_dialog=False, show_add_node_dialog=False, show_add_edge_dialog=False,
                       show_export_image_dialog=False, show_confirm_load=False,
+                      show_confirm_load2=False, show_confirm_file_load=False, show_confirm_file_load2=False,
                       add_edit_property_label='', add_edit_property_value='',
                       add_merge_property_label='', add_merge_property_value='',
                       add_addnode_property_label='', add_addnode_property_value='',
@@ -724,7 +726,7 @@ def main_callback(*args):
             active_network = ActiveNetwork(path_2_data=None, from_file=False)
             active_network.deserialize_network(callback_kwargs['uploaded_file'])
             node_interaction_table = dash_formatter.get_node_interaction_table()
-            edge_interaction_table = dash_formatter.get_node_interaction_table()
+            edge_interaction_table = dash_formatter.get_edge_interaction_table()
             for node_type in active_network.get_active_node_types():
                 node_interaction_table.append(dash_formatter.get_element_interaction_row(node_type, 'node'))
             for edge_type in active_network.get_active_edge_types():
@@ -984,7 +986,7 @@ def main_callback(*args):
         node_container = callback_kwargs['addnode_element_container']
         node_container[1]['props']['options'] = \
             dash_formatter.dash_type_options(active_network.get_active_node_types())
-        return output(addnode_element_container=node_container, grey_background=True, show_add_node_dialog=True)
+        return output(addnode_element_container=node_container, grey_background=True, show_add_node_dialog=True, show_add_dialog=False)
 
 
     ### ADD ADDNODE PROPERTY ###
@@ -1055,7 +1057,7 @@ def main_callback(*args):
             target_options = dash_formatter.dash_type_options(all_nodes)
 
         return output(addedge_element_container=edge_container, grey_background=True,
-                      show_add_edge_dialog=True,
+                      show_add_edge_dialog=True, show_add_dialog=False,
                       addedge_source_node_options=source_options, addedge_target_node_options=target_options)
 
 
@@ -1213,7 +1215,8 @@ def main_callback(*args):
 
     ### APPLY IMAGE EXPORT ###
     elif context.triggered[0]['prop_id'].split('.')[0] == 'apply-export-image-button':
-        export = {'type': callback_kwargs['export_type'],
+        export_type = callback_kwargs.get('export_type') or 'png'
+        export = {'type': export_type,
                   'action': 'download'}
         return output(grey_background=False, show_export_image_dialog=False, image_export=export)
 

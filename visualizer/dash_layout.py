@@ -163,9 +163,9 @@ def init_layout(style, dataset_list, external_dataset_list= []):
                                         id='load-file-button', n_clicks=0),
                             html.Hr(),
                             html.A(html.Button('Save Network State', id='save-network-button', className='inputs'),
-                                   id='download-link', href='/downloadNetwork', className='inputs'),
+                                   id='download-link', href='/downloadNetwork', download='network_state.json', className='inputs'),
                             html.A(html.Button('Export Network', id='export-network-button', className='inputs'),
-                                   id='export-link', href='/exportNetwork', className='inputs'),
+                                   id='export-link', href='/exportNetwork', download='network_export.json', className='inputs'),
                             html.Hr(),
                             html.Button('Export Image', className='inputs', id='export-image-button', n_clicks= 0),
                             html.Hr()
@@ -471,9 +471,10 @@ confirm_file_load = html.Div([
         [
             dbc.ModalHeader("LOAD NETWORK FROM FILE"),
             dbc.ModalBody("Select a network data file from you local drive.", className="centered-modal-body"),
-            dbc.ModalFooter(
-                dcc.Upload(dbc.Button("Load File", id="confirm-file-load-button", className="modal-button"), id='upload')
-            )
+            dbc.ModalFooter([
+                dcc.Upload(dbc.Button("Load File", id="confirm-file-load-button", className="modal-button"), id='upload'),
+                dbc.Button("Cancel", id="close-dialog", className="modal-button")
+            ])
         ],
         is_open=False,
         id="modal-confirm-file-load",

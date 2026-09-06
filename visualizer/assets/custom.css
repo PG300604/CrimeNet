@@ -86,6 +86,16 @@
     background-color: white;
 }
 
+a.inputs {
+    display: block;
+    text-decoration: none;
+    color: inherit;
+}
+
+a.inputs > button {
+    pointer-events: none;
+}
+
 #title {
     margin-left: 1vh;
     font-weight: bold;
@@ -275,17 +285,60 @@ tr {
     display: none;
 }
 
+.modal, [role="dialog"].modal {
+    position: fixed !important;
+    top: 0 !important;
+    left: 0 !important;
+    width: 100% !important;
+    height: 100% !important;
+    z-index: 1050 !important;
+    overflow-x: hidden !important;
+    overflow-y: auto !important;
+    outline: 0 !important;
+    pointer-events: none !important;
+}
+
+.modal-backdrop {
+    display: none !important;
+}
+
+.modal-dialog {
+    position: fixed !important;
+    top: 50% !important;
+    left: 50% !important;
+    transform: translate(-50%, -50%) !important;
+    width: 35vw !important;
+    max-width: 90vw !important;
+    z-index: 1051 !important;
+    margin: 0 !important;
+    pointer-events: auto !important;
+}
+
 .modal-content {
-    position: fixed;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    width: 35vw;
+    position: relative;
+    width: 100%;
     background-color: #f9f9f9;
     padding: 2vh;
     border-radius: 10px;
     border: 1.2px #99004d solid;
     text-transform: uppercase;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+    z-index: 1052;
+}
+
+.modal-dialog.modal-content {
+    position: fixed !important;
+    top: 50% !important;
+    left: 50% !important;
+    transform: translate(-50%, -50%) !important;
+    border: none !important;
+    background: transparent !important;
+    padding: 0 !important;
+    box-shadow: none !important;
+}
+
+.modal-header .btn-close {
+    display: none !important;
 }
 
 .modal-header {
