@@ -637,6 +637,75 @@ def main_callback(*args):
             return output(message=message)
 
 
+    ### ISOLATE SELECTED BUTTON (CLEAR VIEW) ###
+    elif context.triggered[0]['prop_id'].split('.')[0] == 'isolate-button':
+        try:
+            if not active_network or not active_network.elements:
+                message = dash_formatter.dash_message("Please load a network first.", success=False)
+                return output(message=message)
+
+            selected_nodes = active_network.get_selected_nodes()
+            if not selected_nodes:
+                message = dash_formatter.dash_message(
+                    "Please select one or more nodes first by clicking them to get a clear view.",
+                    success=False
+                )
+                return output(message=message)
+
+            num_nodes, num_edges = active_network.isolate_nodes(selected_nodes)
+            network_info = dash_formatter.dash_network_info(active_network.get_active_network_info())
+            node_interaction_table = dash_formatter.get_node_interaction_table()
+            edge_interaction_table = dash_formatter.get_edge_interaction_table()
+            for node_type in active_network.get_active_node_types():
+                node_interaction_table.append(dash_formatter.get_element_interaction_row(node_type, 'node'))
+            for edge_type in active_network.get_active_edge_types():
+                edge_interaction_table.append(dash_formatter.get_element_interaction_row(edge_type, 'edge'))
+
+            num_selected = len(selected_nodes)
+            num_linked = num_nodes - num_selected
+            if num_linked > 0:
+                text = f"Clear view enabled: showing {num_selected} selected node(s), {num_linked} linked node(s), and {num_edges} connection(s). Click 'Show All Nodes' to restore."
+            else:
+                text = f"Clear view enabled: showing {num_nodes} node(s) and {num_edges} connection(s). Click 'Show All Nodes' to restore."
+            message = dash_formatter.dash_message(text, success=True)
+            visualizer_app.logger.info(text)
+            return output(elements=active_network.elements, network_info=network_info, message=message,
+                          node_interaction_table=node_interaction_table, edge_interaction_table=edge_interaction_table,
+                          layout=ACTIVE_LAYOUT)
+        except Exception:
+            text = "An unexpected error occurred while trying to isolate selected nodes."
+            visualizer_app.logger.exception(text)
+            message = dash_formatter.dash_message(text, False)
+            return output(message=message)
+
+
+    ### SHOW ALL NODES BUTTON (RESTORE VIEW) ###
+    elif context.triggered[0]['prop_id'].split('.')[0] == 'show-all-button':
+        try:
+            if not active_network or not getattr(active_network, 'nodes', None):
+                message = dash_formatter.dash_message("Please load a network first.", success=False)
+                return output(message=message)
+
+            num_nodes, num_edges = active_network.restore_full_network()
+            network_info = dash_formatter.dash_network_info(active_network.get_active_network_info())
+            node_table, edge_table, label_table = get_interaction_tables(active_network)
+            style.reset()
+            style.set_type_styles(active_network.get_active_node_types())
+
+            text = f"Restored full network view ({num_nodes} nodes, {num_edges} edges)."
+            message = dash_formatter.dash_message(text, success=True)
+            visualizer_app.logger.info(text)
+            return output(elements=active_network.elements, stylesheet=style.stylesheet,
+                          layout=ACTIVE_LAYOUT, network_info=network_info,
+                          node_interaction_table=node_table, edge_interaction_table=edge_table,
+                          label_interaction_table=label_table, message=message)
+        except Exception:
+            text = "An unexpected error occurred while restoring full network view."
+            visualizer_app.logger.exception(text)
+            message = dash_formatter.dash_message(text, False)
+            return output(message=message)
+
+
     ### EXPAND ALL BUTTON ###
     elif context.triggered[0]['prop_id'].split('.')[0] == 'expand-all-button':
         try:

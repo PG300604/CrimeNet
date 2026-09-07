@@ -233,6 +233,9 @@ tr {
     bottom: 7vh;
     right: 24.1%;
     width: 13vh;
+    max-height: 88vh;
+    overflow-y: auto;
+    overflow-x: hidden;
     z-index: 10;
 }
 
@@ -260,6 +263,28 @@ tr {
     margin-bottom: 0.7vh;
     font-size: 1.5vh;
     z-index: 10;
+}
+
+#isolate-button {
+    border: 1.8px #0077b6 solid;
+    color: #0077b6;
+    font-weight: bold;
+    background-color: #f0f9ff;
+}
+
+#isolate-button:hover {
+    background-color: #bae6fd;
+}
+
+#show-all-button {
+    border: 1.8px #2b7a4b solid;
+    color: #2b7a4b;
+    font-weight: bold;
+    background-color: #f0fdf4;
+}
+
+#show-all-button:hover {
+    background-color: #bbf7d0;
 }
 
 .highlight-hide-button {

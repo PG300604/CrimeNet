@@ -166,6 +166,8 @@ inputs = [
     Input("open-delete-element", "n_clicks"),
     Input("open-merge-element", "n_clicks"),
     Input('exclude-button', 'n_clicks'),
+    Input('isolate-button', 'n_clicks'),
+    Input('show-all-button', 'n_clicks'),
     Input('expand-all-button', 'n_clicks'),
     Input('expand-button', 'n_clicks'),
 
@@ -301,7 +303,7 @@ input_names = [
 
     ## 'ELEMENT' 'INTERACTION' ##
     'edit_clicks', 'add_clicks', 'delete_clicks', 'merge_clicks',
-    'exclude_clicks', 'expand_all_clicks', 'expand_button_clicks',
+    'exclude_clicks', 'isolate_clicks', 'show_all_clicks', 'expand_all_clicks', 'expand_button_clicks',
 
     ############### 'DIALOG' 'INPUTS' ###############
 

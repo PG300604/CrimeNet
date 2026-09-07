@@ -143,6 +143,8 @@ def init_layout(style, dataset_list, external_dataset_list= []):
                     dbc.Button('Delete\nElements', className='interaction-button', id='open-delete-element'),
                     dbc.Button('Merge\nElements', className='interaction-button', id='open-merge-element'),
                     dbc.Button('Exclude\nElements', className='interaction-button', id='exclude-button'),
+                    dbc.Button('Clear View', className='interaction-button', id='isolate-button'),
+                    dbc.Button('Show All\nNodes', className='interaction-button', id='show-all-button'),
                     dbc.Button('Expand \n All Nodes', className='interaction-button', id='expand-all-button'),
                     dbc.Button('Expand\nNode(s)', className='node-buttons', id='expand-button')
                 ])

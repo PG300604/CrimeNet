@@ -2819,6 +2819,100 @@ class ActiveNetwork(BuiltinDataset):
         # set the node to selected
         self.toggle_node_selection(new_node)
 
+    def isolate_nodes(self, selected_node_ids):
+        """
+        Isolates selected nodes and all directly linked nodes (connected neighbors)
+        to provide a clear, clutter-free view of the selected entities and whom they are linked to.
+        """
+        selected = set(selected_node_ids)
+        linked_nodes = set(selected)
+
+        # Collect all active nodes connected to any selected node (incoming or outgoing)
+        for e_idx, e_info in self.active_edges.items():
+            if e_idx < len(self.edges):
+                edge = self.edges[e_idx]
+                src = edge.get('source')
+                tgt = edge.get('target')
+                if src in selected and tgt in self.active_nodes:
+                    linked_nodes.add(tgt)
+                if tgt in selected and src in self.active_nodes:
+                    linked_nodes.add(src)
+
+        # Also include any nodes already highlighted as incoming_neighbor_selected
+        for el in self.elements:
+            if el.get('group') == 'nodes':
+                d = el.get('data', {})
+                if d.get('incoming_neighbor_selected') and d.get('id') in self.active_nodes:
+                    linked_nodes.add(d.get('id'))
+
+        new_elements = []
+        new_active_nodes = {}
+        new_active_edges = {}
+
+        self.erase_previous_analysis_result(task_id='social_influence_analysis')
+        self.erase_previous_analysis_result(task_id='community_detection')
+        self.erase_previous_analysis_result(task_id='link_prediction')
+        self.last_analysis = None
+
+        # Add node elements (preserving selected and linked red outline indicators)
+        for el in self.elements:
+            data = el.get('data', {})
+            group = el.get('group')
+            if group == 'nodes':
+                node_id = data.get('id')
+                if node_id in linked_nodes:
+                    if node_id in selected:
+                        data['selected'] = True
+                        data['incoming_neighbor_selected'] = False
+                    else:
+                        data['selected'] = False
+                        data['incoming_neighbor_selected'] = True
+
+                    el_idx = len(new_elements)
+                    new_elements.append(el)
+                    if node_id in self.active_nodes:
+                        node_info = dict(self.active_nodes[node_id])
+                        node_info['element_index'] = el_idx
+                        node_info['expandable'] = True
+                        new_active_nodes[node_id] = node_info
+
+        # Add edge elements connecting the kept nodes
+        for el in self.elements:
+            data = el.get('data', {})
+            group = el.get('group')
+            if group == 'edges':
+                src = data.get('source')
+                tgt = data.get('target')
+                if src in linked_nodes and tgt in linked_nodes:
+                    if src in selected:
+                        data['source_selected'] = True
+                    el_idx = len(new_elements)
+                    new_elements.append(el)
+                    edge_id = data.get('id')
+                    for e_idx, e_info in self.active_edges.items():
+                        if e_info.get('element_index') == el.get('element_index') or e_idx == edge_id:
+                            new_e = dict(e_info)
+                            new_e['element_index'] = el_idx
+                            new_active_edges[e_idx] = new_e
+                            break
+
+        self.elements = new_elements
+        self.active_nodes = new_active_nodes
+        self.active_edges = new_active_edges
+        self.selected_nodes = set(selected)
+        return len(new_active_nodes), len(new_elements) - len(new_active_nodes)
+
+    def restore_full_network(self):
+        """
+        Restores full network view while preserving the current node selection.
+        """
+        selected = list(self.get_selected_nodes())
+        self.initialize()
+        for node in selected:
+            if node in self.active_nodes:
+                self.toggle_node_selection(node)
+        return len(self.active_nodes), len(self.elements) - len(self.active_nodes)
+
 
 class BuiltinDatasetsManager(DataManager):
     """
