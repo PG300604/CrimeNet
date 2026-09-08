@@ -35,6 +35,8 @@ import os
 import json
 import networkx as nx
 import io
+import csv
+import re
 import random
 import copy
 import ast
@@ -2401,17 +2403,229 @@ class ActiveNetwork(BuiltinDataset):
         except Exception as e:
             return e
 
+    @staticmethod
+    def infer_entity_type(val, col_name=None):
+        s = str(val).strip()
+        if not s:
+            return 'entity'
+        col = (col_name or '').lower()
+        if any(k in col for k in ['phone', 'mobile', 'call', 'msisdn', 'caller', 'callee']):
+            return 'phone'
+        if any(k in col for k in ['veh', 'car', 'plate', 'reg']):
+            return 'vehicle'
+        if any(k in col for k in ['fir', 'case', 'crime']):
+            return 'case'
+        if any(k in col for k in ['loc', 'place', 'city', 'address', 'area']):
+            return 'location'
+        if any(k in col for k in ['org', 'comp', 'bank', 'firm', 'agency']):
+            return 'organization'
+
+        # Value pattern heuristics
+        if re.match(r'^\+?[6-9]\d{9}$', s):
+            return 'phone'
+        if re.match(r'^[A-Z]{2}[ -]?\d{1,2}[ -]?[A-Z]{1,3}[ -]?\d{4}$', s, re.IGNORECASE) or s.lower().startswith('veh_'):
+            return 'vehicle'
+        if re.match(r'^(FIR|CASE|CRIME)[-_/]\d+', s, re.IGNORECASE):
+            return 'case'
+
+        org_words = ['traders', 'logistics', 'exports', 'infotech', 'motors', 'pvt', 'ltd', 'limited', 'enterprises', 'bank', 'corp', 'solutions']
+        lower_s = s.lower()
+        if any(w in lower_s for w in org_words):
+            return 'organization'
+
+        loc_words = ['bagh', 'place', 'noida', 'estate', 'thane', 'delhi', 'mumbai', 'chowk', 'vashi', 'bhiwandi', 'sector', 'nagar', 'road', 'marg']
+        if any(w in lower_s for w in loc_words):
+            return 'location'
+
+        return 'person'
+
+    @staticmethod
+    def parse_csv_to_data_list(csv_text):
+        lines = [l for l in csv_text.strip().splitlines() if l.strip() and not l.strip().startswith('#')]
+        if not lines:
+            return []
+
+        delimiter = ','
+        try:
+            dialect = csv.Sniffer().sniff("\n".join(lines[:10]), delimiters=',;\t|')
+            delimiter = dialect.delimiter
+        except Exception:
+            if '\t' in lines[0]:
+                delimiter = '\t'
+            elif ';' in lines[0]:
+                delimiter = ';'
+            elif '|' in lines[0]:
+                delimiter = '|'
+
+        reader = csv.reader(io.StringIO("\n".join(lines)), delimiter=delimiter)
+        all_rows = [row for row in reader if any(cell.strip() for cell in row)]
+        if not all_rows:
+            return []
+
+        first_row = [c.strip() for c in all_rows[0]]
+        first_row_lower = [c.lower() for c in first_row]
+
+        src_aliases = {'source', 'src', 'from', 'caller', 'sender', 'entity1', 'entity_a', 'node1', 'person1', 'suspect', 'origin', 'a'}
+        tgt_aliases = {'target', 'tgt', 'to', 'callee', 'receiver', 'entity2', 'entity_b', 'node2', 'person2', 'associate', 'destination', 'b'}
+
+        src_idx = -1
+        tgt_idx = -1
+        weight_idx = -1
+        type_idx = -1
+        time_idx = -1
+
+        for i, col in enumerate(first_row_lower):
+            if src_idx == -1 and (col in src_aliases or any(a in col for a in ['caller', 'sender', 'source', 'from'])):
+                src_idx = i
+            elif tgt_idx == -1 and (col in tgt_aliases or any(a in col for a in ['callee', 'receiver', 'target', 'to'])):
+                tgt_idx = i
+            elif weight_idx == -1 and col in {'weight', 'calls', 'duration', 'amount', 'count', 'frequency', 'freq', 'score'}:
+                weight_idx = i
+            elif type_idx == -1 and col in {'type', 'relation', 'relationship', 'edge_type', 'link_type', 'action', 'interaction'}:
+                type_idx = i
+            elif time_idx == -1 and col in {'timestamp', 'time', 'date', 'datetime', 'call_time', 'txn_date'}:
+                time_idx = i
+
+        has_header = (src_idx != -1 and tgt_idx != -1) or any(
+            col in {'name', 'id', 'type', 'source', 'target', 'from', 'to', 'phone', 'vehicle', 'case', 'amount', 'duration'}
+            for col in first_row_lower
+        )
+
+        data_rows = all_rows[1:] if has_header else all_rows
+        header = first_row if has_header else [f"col_{i}" for i in range(len(all_rows[0]))]
+
+        data_list = []
+        nodes_seen = set()
+
+        def add_node(nid, col_name=None, ntype=None):
+            sid = str(nid).strip()
+            if not sid or sid in nodes_seen:
+                return
+            nodes_seen.add(sid)
+            t = ntype or ActiveNetwork.infer_entity_type(sid, col_name)
+            props = {
+                'id': sid,
+                'name': sid.replace('_', ' '),
+                'type': t
+            }
+            data_list.append({'type': 'node', 'id': sid, 'properties': props})
+
+        def add_edge(src, tgt, edge_type=None, weight=1.0, edge_props=None):
+            s_src = str(src).strip()
+            s_tgt = str(tgt).strip()
+            if not s_src or not s_tgt or s_src == s_tgt:
+                return
+            et = edge_type or 'connected_to'
+            props = {'type': et, 'weight': weight}
+            if edge_props:
+                for k, v in edge_props.items():
+                    if k not in props and v:
+                        props[k] = v
+            data_list.append({'type': 'edge', 'source': s_src, 'target': s_tgt, 'properties': props})
+
+        # Case 1: Standard edge-list (src and tgt columns identified)
+        if src_idx != -1 and tgt_idx != -1:
+            for row in data_rows:
+                if len(row) <= max(src_idx, tgt_idx):
+                    continue
+                src = row[src_idx].strip()
+                tgt = row[tgt_idx].strip()
+                if not src or not tgt:
+                    continue
+
+                w = 1.0
+                if weight_idx != -1 and len(row) > weight_idx:
+                    try:
+                        w = float(re.sub(r'[^\d.]', '', row[weight_idx]))
+                    except Exception:
+                        w = 1.0
+
+                et = None
+                if type_idx != -1 and len(row) > type_idx and row[type_idx].strip():
+                    et = row[type_idx].strip()
+
+                props = {}
+                for i, val in enumerate(row):
+                    if i not in {src_idx, tgt_idx, weight_idx, type_idx} and i < len(header):
+                        props[header[i]] = val.strip()
+                if time_idx != -1 and len(row) > time_idx:
+                    props['timestamp'] = row[time_idx].strip()
+
+                add_node(src, col_name=header[src_idx])
+                add_node(tgt, col_name=header[tgt_idx])
+                add_edge(src, tgt, edge_type=et, weight=w, edge_props=props)
+
+        # Case 2: Multi-entity record table (e.g. suspect, phone, vehicle, fir, location)
+        elif len(header) >= 2 and any(k in first_row_lower for k in ['suspect', 'person', 'name', 'phone', 'vehicle', 'fir', 'case']):
+            primary_idx = 0
+            for i, col in enumerate(first_row_lower):
+                if col in {'suspect', 'person', 'name', 'accused', 'caller'}:
+                    primary_idx = i
+                    break
+
+            for row in data_rows:
+                if len(row) <= primary_idx:
+                    continue
+                primary_val = row[primary_idx].strip()
+                if not primary_val:
+                    continue
+                add_node(primary_val, col_name=header[primary_idx])
+
+                for j, cell in enumerate(row):
+                    if j == primary_idx or j >= len(header):
+                        continue
+                    val = cell.strip()
+                    if not val:
+                        continue
+                    col_name = header[j].lower()
+                    rel = 'associated_with'
+                    if 'phone' in col_name:
+                        rel = 'uses_phone'
+                    elif 'veh' in col_name:
+                        rel = 'uses_vehicle'
+                    elif 'fir' in col_name or 'case' in col_name:
+                        rel = 'named_in'
+                    elif 'loc' in col_name:
+                        rel = 'seen_at'
+                    elif 'org' in col_name:
+                        rel = 'affiliated_with'
+
+                    add_node(val, col_name=header[j])
+                    add_edge(primary_val, val, edge_type=rel, weight=1.0)
+
+        # Case 3: Fallback 2+ columns -> col 0 is source, col 1 is target
+        else:
+            for row in data_rows:
+                if len(row) < 2:
+                    continue
+                src = row[0].strip()
+                tgt = row[1].strip()
+                if not src or not tgt:
+                    continue
+                w = 1.0
+                if len(row) >= 3:
+                    try:
+                        w = float(re.sub(r'[^\d.]', '', row[2]))
+                    except Exception:
+                        pass
+                et = row[3].strip() if len(row) >= 4 and row[3].strip() else 'linked_to'
+                add_node(src)
+                add_node(tgt)
+                add_edge(src, tgt, edge_type=et, weight=w)
+
+        return data_list
+
     def deserialize_network(self, uploaded_file, initialize=True):
         """
-
-        :param uploaded_file:
-        :return:
+        Deserialize network data from JSON or CSV format.
+        :param uploaded_file: base64 encoded data URI string
+        :param initialize: whether to initialize elements
         """
-        # try:
         # reset the current containers
         self.nodes = {}
         self.edges = []
         self.adj_list = {}
+        self.in_adj_list = {}
         self.node_types = {}
         self.edge_types = {}
 
@@ -2419,39 +2633,54 @@ class ActiveNetwork(BuiltinDataset):
         self.active_edges = {}
 
         self.elements = []
-        #
         self.network_name = None
         self.node_label_field = None
         self.edge_label_field = None
-        #
+
         self.predicted_edges = {}
         self.last_analysis = None
         self.selected_nodes = set()
         self.selected_edges = set()
         self.recent_interactions = []
-        #
         self.meta_info = {}
 
         # load from file
-
         print('\t\t DESERIALIZING')
 
         content_type, content_string = uploaded_file.split(',')
-        decoded = base64.b64decode(content_string).decode('utf-8')
+        decoded = base64.b64decode(content_string).decode('utf-8', errors='replace')
+        decoded_clean = decoded.strip()
 
-        # convert from new to old format
-        if decoded.startswith("{\n"):
-            in_data = json.loads(decoded)
-            data_list = converter.new_to_old(in_data)
+        # Check if JSON or CSV
+        data_list = []
+        is_json = False
+
+        if decoded_clean.startswith("{\n") or decoded_clean.startswith("{\r\n"):
             try:
-                self.meta_info['directed'] = in_data['directed']
-                self.meta_info['multigraph'] = in_data['multigraph']
-                self.meta_info['graph'] = in_data['graph']
-            except KeyError:
-                print('Input JOSN must have directed, multigraph and graph fields. See specification for information.')
-        else:
-            # a = json.loads(decoded)
-            data_list = [json.loads(line.strip()) for line in decoded.split('\n') if len(line)!=0 and not line.startswith('#')]
+                in_data = json.loads(decoded)
+                data_list = converter.new_to_old(in_data)
+                try:
+                    self.meta_info['directed'] = in_data.get('directed', False)
+                    self.meta_info['multigraph'] = in_data.get('multigraph', False)
+                    self.meta_info['graph'] = in_data.get('graph', {})
+                except KeyError:
+                    pass
+                is_json = True
+            except Exception:
+                is_json = False
+
+        if not is_json:
+            first_non_comment = next((l.strip() for l in decoded_clean.splitlines() if l.strip() and not l.strip().startswith('#')), '')
+            if first_non_comment.startswith('{') and ('"type"' in first_non_comment or "'type'" in first_non_comment):
+                try:
+                    data_list = [json.loads(line.strip()) for line in decoded.splitlines() if len(line.strip()) != 0 and not line.strip().startswith('#')]
+                    is_json = True
+                except Exception:
+                    is_json = False
+
+        if not is_json:
+            # Parse as CSV!
+            data_list = self.parse_csv_to_data_list(decoded)
 
         # print('decoded = ', decoded)
         for line_object in data_list:

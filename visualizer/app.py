@@ -795,6 +795,11 @@ def main_callback(*args):
         try:
             active_network = ActiveNetwork(path_2_data=None, from_file=False)
             active_network.deserialize_network(callback_kwargs['uploaded_file'])
+            if not active_network.elements:
+                text = "Uploaded file contains no valid entities or links."
+                message = dash_formatter.dash_message(text, success=False)
+                return output(message=message, grey_background=False, show_confirm_file_load=False)
+
             node_interaction_table = dash_formatter.get_node_interaction_table()
             edge_interaction_table = dash_formatter.get_edge_interaction_table()
             for node_type in active_network.get_active_node_types():
@@ -803,13 +808,15 @@ def main_callback(*args):
                 edge_interaction_table.append(dash_formatter.get_element_interaction_row(edge_type, 'edge'))
             network_info = dash_formatter.dash_network_info(active_network.get_active_network_info())
             node_infos = []
-            if active_network.node_label_field not in active_network.elements[0]['data']['info']:
+            first_node_info = active_network.elements[0]['data'].get('info', {}) if active_network.elements else {}
+            if active_network.node_label_field not in first_node_info:
                 active_network.node_label_field = 'id'
             labels = [active_network.node_label_field]
             for e in active_network.elements:
-                if e['group'] == 'nodes':
-                    for info in e['data']['info']:
-                        if not info in node_infos:
+                if e.get('group') == 'nodes':
+                    info_dict = e['data'].get('info', {})
+                    for info in info_dict:
+                        if info not in node_infos:
                             node_infos.append(info)
             label_interaction_table = dash_formatter.get_label_table()
             for info in node_infos:
@@ -820,13 +827,14 @@ def main_callback(*args):
 
             hide_prob_slider = True
             for e in active_network.edges:
-                if 'probability' in e['properties']:
+                if 'probability' in e.get('properties', {}):
                     hide_prob_slider = False
 
             style.reset()
             style.set_type_styles(active_network.get_active_node_types())
 
-            text = "Network file {} successfully loaded.".format(callback_kwargs['uploaded_filename'])
+            fname = callback_kwargs.get('uploaded_filename') or 'network'
+            text = f"Network file '{fname}' successfully loaded ({len(active_network.nodes)} entities, {len(active_network.edges)} connections)."
             message = dash_formatter.dash_message(text, success=True)
             visualizer_app.logger.info(text)
 
@@ -848,11 +856,11 @@ def main_callback(*args):
             message = dash_formatter.dash_message(text, success=False)
             visualizer_app.logger.exception(text)
             return output(message=message, grey_background=False, show_confirm_file_load=False)
-        except Exception:
-            text = "File couldn't be loaded due to an unknown error."
+        except Exception as ex:
+            text = f"File couldn't be loaded: {str(ex)}"
             message = dash_formatter.dash_message(text, success=False)
             visualizer_app.logger.exception(text)
-            return output(message=message,grey_background=False, show_confirm_file_load=False)
+            return output(message=message, grey_background=False, show_confirm_file_load=False)
 
 
     ########## LOAD DONE ##################
@@ -1497,12 +1505,13 @@ def get_interaction_tables(active_network):
         edge_interaction_table.append(dash_formatter.get_element_interaction_row(edge_type, 'edge'))
     network_info = dash_formatter.dash_network_info(active_network.get_active_network_info())
     node_infos = []
-    if active_network.node_label_field not in active_network.elements[0]['data']['info']:
+    first_info = active_network.elements[0]['data'].get('info', {}) if active_network.elements else {}
+    if active_network.node_label_field not in first_info:
         active_network.node_label_field = 'id'
     labels = [active_network.node_label_field]
     for e in active_network.elements:
-        if e['group'] == 'nodes':
-            for info in e['data']['info']:
+        if e.get('group') == 'nodes':
+            for info in e['data'].get('info', {}):
                 if not info in node_infos:
                     node_infos.append(info)
     label_interaction_table = dash_formatter.get_label_table()
@@ -1512,3 +1521,23 @@ def get_interaction_tables(active_network):
         else:
             label_interaction_table.append(dash_formatter.get_label_table_row(info, False))
     return node_interaction_table, edge_interaction_table, label_interaction_table
+
+
+# ------------------------------------------------------------------------------------------------- #
+# CLIENTSIDE CALLBACK: STREAM CYTOSCAPE NETWORK UPDATES TO INTELLIGENCE ENGINE
+# ------------------------------------------------------------------------------------------------- #
+visualizer_app.clientside_callback(
+    """
+    function(elements, tapNodeData, tabValue) {
+        if (window.UNBOUND && typeof window.UNBOUND.onNetworkUpdate === 'function') {
+            window.UNBOUND.onNetworkUpdate(elements, tapNodeData, tabValue);
+        }
+        return '';
+    }
+    """,
+    Output('unbound-intel-trigger', 'children'),
+    Input('cytoscape', 'elements'),
+    Input('cytoscape', 'tapNodeData'),
+    Input('tabs', 'value'),
+    prevent_initial_call=False
+)

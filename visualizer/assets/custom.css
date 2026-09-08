@@ -1022,3 +1022,186 @@ input[type="radio"] {
     margin-left: 4px;
     font-weight: 700;
 }
+
+/* --- CrimeNet Direct CSV Upload --- */
+.crimenet-upload-dropzone {
+    padding: 8px 6px;
+    text-align: center;
+    border: 1.5px dashed #2783DE;
+    border-radius: 6px;
+    background: rgba(39, 131, 222, 0.04);
+    cursor: pointer;
+    transition: background 0.15s, border-color 0.15s;
+    margin: 4px 0 6px 0;
+}
+.crimenet-upload-dropzone:hover {
+    background: rgba(39, 131, 222, 0.08);
+    border-color: #1f74c8;
+}
+
+/* --- CrimeNet Intelligence Subnav & Pills --- */
+.crimenet-intel-subnav {
+    display: flex;
+    gap: 3px;
+    overflow-x: auto;
+    padding-bottom: 6px;
+    margin-bottom: 8px;
+    border-bottom: 1px solid #E6E5E3;
+}
+.crimenet-intel-subnav::-webkit-scrollbar { height: 3px; }
+.crimenet-intel-subnav::-webkit-scrollbar-thumb { background: #ccc; border-radius: 2px; }
+
+.intel-nav-pill {
+    border: 1px solid #E6E5E3;
+    background: #fff;
+    border-radius: 4px;
+    padding: 3px 7px;
+    font-size: 10.5px;
+    font-weight: 550;
+    cursor: pointer;
+    white-space: nowrap;
+    color: #555;
+    transition: all 0.12s;
+    font-family: inherit;
+}
+.intel-nav-pill:hover { background: #F9F8F7; }
+.intel-nav-pill.active {
+    background: #2783DE;
+    color: #fff;
+    border-color: #2783DE;
+}
+
+/* --- CrimeNet Metrics Grid --- */
+.crimenet-metrics-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 4px;
+    margin-bottom: 10px;
+}
+.crimenet-metric-card {
+    background: #F9F8F7;
+    border: 1px solid #E6E5E3;
+    border-radius: 5px;
+    padding: 6px 4px;
+    text-align: center;
+}
+.crimenet-metric-card .val {
+    font-size: 15px;
+    font-weight: 700;
+    line-height: 1.2;
+}
+.crimenet-metric-card .lbl {
+    font-size: 8.5px;
+    color: #7D7A75;
+    font-weight: 600;
+    margin-top: 2px;
+    letter-spacing: 0.3px;
+}
+
+/* --- CrimeNet Search & Filters --- */
+.crimenet-search-bar {
+    width: 100%;
+    border: 1px solid #E6E5E3;
+    border-radius: 5px;
+    padding: 5px 8px;
+    font-size: 11px;
+    background: #fff;
+    color: #2C2C2B;
+    box-sizing: border-box;
+    font-family: inherit;
+}
+.crimenet-search-bar:focus {
+    outline: 2px solid #2783DE;
+    border-color: transparent;
+}
+.crimenet-type-chip {
+    border: 1px solid #E6E5E3;
+    background: #fff;
+    border-radius: 4px;
+    padding: 2px 6px;
+    font-size: 10px;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+    transition: all 0.12s;
+    font-family: inherit;
+    color: #333;
+}
+.crimenet-type-chip:hover { background: #F9F8F7; }
+.crimenet-type-chip.active {
+    background: #2C2C2B;
+    color: #fff;
+    border-color: #2C2C2B;
+}
+
+/* --- N-Hop Box & Evidence Cards --- */
+.crimenet-nhop-box {
+    background: #F9F8F7;
+    border: 1px solid #E6E5E3;
+    border-radius: 6px;
+    padding: 8px 10px;
+    margin-bottom: 10px;
+}
+.crimenet-evidence-card {
+    background: #fff;
+    border: 1px solid #E6E5E3;
+    border-radius: 6px;
+    padding: 8px 10px;
+    margin-top: 6px;
+}
+.selected-rank {
+    background: #eef6fc !important;
+    border-left: 3px solid #2783DE;
+}
+
+/* --- Case Report Modal --- */
+#crimenet-report-modal {
+    position: fixed;
+    inset: 0;
+    z-index: 10000;
+    display: none;
+    align-items: center;
+    justify-content: center;
+}
+.crimenet-report-backdrop {
+    position: absolute;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.55);
+    backdrop-filter: blur(2px);
+}
+.crimenet-report-content {
+    position: relative;
+    z-index: 10001;
+    background: #fff;
+    border-radius: 8px;
+    max-width: 620px;
+    width: 92%;
+    max-height: 85vh;
+    display: flex;
+    flex-direction: column;
+    box-shadow: 0 16px 40px rgba(0,0,0,0.28);
+    overflow: hidden;
+}
+.crimenet-report-header {
+    padding: 12px 16px;
+    border-bottom: 1px solid #E6E5E3;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: #F9F8F7;
+}
+.crimenet-report-body {
+    padding: 16px;
+    overflow-y: auto;
+    flex: 1;
+}
+.crimenet-report-footer {
+    padding: 10px 16px;
+    border-top: 1px solid #E6E5E3;
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+    background: #F9F8F7;
+}
+

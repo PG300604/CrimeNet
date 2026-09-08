@@ -1,378 +1,974 @@
 /**
- * CrimeNet — UNBOUND Intelligence Panel (client-side)
- * Ported from crimenet.html (SIH26189 reference implementation).
- * Provides: Insights, Timeline, Evidence, FIR Ingest — all as Dash clientside callbacks.
- * Loaded automatically by Dash from visualizer/assets/
- *
- * SYNTHETIC DATA NOTICE: The seed corpus embedded here is fictional and
- * generated for demonstration. All phone numbers, names, and case IDs are fake.
+ * CrimeNet — Universal AI Intelligence Engine (Client-Side)
+ * Computes graph analytics, entity classification, Adamic-Adar hidden link prediction,
+ * anomaly detection (hubs, bridges, cross-case), N-hop neighborhood exploration,
+ * evidence trails, investigation timelines, and case reports across ALL loaded datasets and CSVs.
  */
 
-/* ------------------------------------------------------------------ */
-/*  UNBOUND 2026 Synthetic Corpus                                       */
-/* ------------------------------------------------------------------ */
 window.UNBOUND = window.UNBOUND || {};
 
-UNBOUND.SEED_FIRS = [
-  { id: "FIR-2026/0142", title: "Cyber-enabled extortion", station: "Cyber PS, Sector 21", date: "2026-02-11",
-    text: "Complainant Ashok Nair reported that unknown callers demanded \u20b912,00,000 after threatening to leak company data. The complainant received repeated calls from mobile 9876543210 operated by accused Imran Sheikh. Accused Imran Sheikh is a resident of Karol Bagh and works at Apex Infotech. Call detail records show that the accused contacted one Rohit Malhotra on mobile 9812345678 several times. A white sedan bearing registration DL8CAF5031 was seen near Karol Bagh on the same night." },
-  { id: "FIR-2026/0147", title: "Hawala routing and cash recovery", station: "EOW PS, Nehru Place", date: "2026-02-16",
-    text: "During inspection at Nehru Place, unaccounted cash of \u20b98,50,000 was recovered from suspect Deepak Yadav. Suspect Deepak Yadav was carrying mobile 9701122334 and stamped invoices of Sunrise Traders. Accountant Sana Qureshi maintained the parallel ledger of Sunrise Traders from an office at Sector 62 Noida. Onward transfers were routed to Global Overseas Exports through mule accounts opened in the name of Vikas Chauhan. The consignment was moved in a tempo bearing registration UP16BX7742 towards Bhiwandi." },
-  { id: "FIR-2026/0151", title: "Organised vehicle theft", station: "Wagle Estate PS, Thane", date: "2026-03-02",
-    text: "Complainant Priya Menon reported theft of a hatchback bearing registration MH12AB4521 from Wagle Estate. CCTV footage showed accused Manoj Pawar and co-accused Salim Ansari near Wagle Estate at 02:40 hrs. Accused Manoj Pawar used mobile 9822334455 to contact a prospective buyer. The stolen vehicle was later traced to a workshop of Silverline Motors at Bhiwandi. Handler Deepak Yadav negotiated the resale on mobile 9701122334." },
-  { id: "FIR-2026/0158", title: "Fake recruitment and cheating", station: "Andheri East PS", date: "2026-03-09",
-    text: "Recruiter Farhan Ali collected \u20b92,40,000 from job aspirants at Andheri East. Farhan Ali used mobile 9967788991 and circulated the account details of Zenith Logistics. Associate Ritesh Gupta received the deposits and forwarded them to Sunrise Traders. Ritesh Gupta is a resident of Kurla West and was seen on a scooter bearing registration MH04CD8890. The collected payments were withdrawn from ATMs near Vashi." },
-  { id: "FIR-2026/0163", title: "Mule account network", station: "Cyber PS, Sector 21", date: "2026-03-18",
-    text: "The bank reported that mule accounts in the name of Vikas Chauhan and Naveen Kumar received \u20b919,60,000 within four days. Suspect Vikas Chauhan was contacted from mobile 9812345678 shortly before each transfer. Naveen Kumar used mobile 9701998877 and operated from Karol Bagh. The funds were consolidated by Global Overseas Exports and withdrawn at Nehru Place. A car bearing registration DL3CAT1188 was used during the withdrawals." },
-  { id: "FIR-2026/0170", title: "Interception of contraband courier", station: "Bhiwandi PS, Thane", date: "2026-03-25",
-    text: "Accused Salim Ansari was intercepted near Bhiwandi with a consignment concealed in a van bearing registration DL8CAF5031. Salim Ansari used mobile 9833445566 and had contacted 9822334455 repeatedly before the seizure. Courier Deepak Yadav arranged the transport through Zenith Logistics. Cash of \u20b93,20,000 was recovered from a godown at Bhiwandi linked to Silverline Motors." }
-];
-
-UNBOUND.SEED_CDR = [
-  ["9876543210","9812345678","2026-02-12T02:14",412,"FIR-2026/0142"],
-  ["9876543210","9812345678","2026-02-12T21:05",96,"FIR-2026/0142"],
-  ["9876543210","9812345678","2026-02-13T03:05",240,"FIR-2026/0142"],
-  ["9812345678","9701122334","2026-02-14T11:20",88,"FIR-2026/0147"],
-  ["9812345678","9701122334","2026-02-15T01:40",305,"FIR-2026/0147"],
-  ["9812345678","9701122334","2026-02-16T19:12",141,"FIR-2026/0147"],
-  ["9812345678","9701122334","2026-03-01T23:48",262,"FIR-2026/0151"],
-  ["9701122334","9822334455","2026-03-01T22:31",187,"FIR-2026/0151"],
-  ["9701122334","9822334455","2026-03-02T02:05",401,"FIR-2026/0151"],
-  ["9822334455","9833445566","2026-03-02T02:52",73,"FIR-2026/0151"],
-  ["9822334455","9833445566","2026-03-24T01:18",512,"FIR-2026/0170"],
-  ["9822334455","9833445566","2026-03-25T04:33",118,"FIR-2026/0170"],
-  ["9967788991","9812345678","2026-03-08T15:44",65,"FIR-2026/0158"],
-  ["9967788991","9812345678","2026-03-10T20:02",132,"FIR-2026/0158"],
-  ["9967788991","9701998877","2026-03-11T13:27",219,"FIR-2026/0163"],
-  ["9701998877","9812345678","2026-03-16T02:49",358,"FIR-2026/0163"],
-  ["9701998877","9812345678","2026-03-17T03:22",274,"FIR-2026/0163"],
-  ["9701998877","9701122334","2026-03-18T09:15",47,"FIR-2026/0163"],
-  ["9876543210","9967788991","2026-03-19T18:36",91,"FIR-2026/0158"],
-  ["9833445566","9701122334","2026-03-23T00:57",168,"FIR-2026/0170"]
-];
-
-UNBOUND.SEED_TXN = [
-  ["Vikas Chauhan","Sunrise Traders",485000,"2026-02-13T11:20","RTGS","FIR-2026/0147"],
-  ["Vikas Chauhan","Sunrise Traders",492000,"2026-02-14T11:41","RTGS","FIR-2026/0147"],
-  ["Vikas Chauhan","Sunrise Traders",478000,"2026-02-15T12:02","RTGS","FIR-2026/0147"],
-  ["Naveen Kumar","Sunrise Traders",390000,"2026-03-17T10:05","IMPS","FIR-2026/0163"],
-  ["Ritesh Gupta","Sunrise Traders",240000,"2026-03-09T16:30","UPI","FIR-2026/0158"],
-  ["Sunrise Traders","Global Overseas Exports",2950000,"2026-03-18T17:55","RTGS","FIR-2026/0163"],
-  ["Global Overseas Exports","Apex Infotech",95000,"2026-02-20T14:12","NEFT","FIR-2026/0142"],
-  ["Zenith Logistics","Silverline Motors",180000,"2026-03-21T12:44","NEFT","FIR-2026/0170"],
-  ["Rohit Malhotra","Vikas Chauhan",60000,"2026-03-15T09:31","UPI","FIR-2026/0163"],
-  ["Rohit Malhotra","Naveen Kumar",58000,"2026-03-16T09:44","UPI","FIR-2026/0163"],
-  ["Zenith Logistics","Farhan Ali",75000,"2026-03-12T18:20","NEFT","FIR-2026/0158"]
-];
-
-UNBOUND.SEED_PINGS = [
-  ["9812345678","Karol Bagh","2026-02-12T02:31","FIR-2026/0142"],
-  ["9876543210","Karol Bagh","2026-02-12T02:19","FIR-2026/0142"],
-  ["9701122334","Nehru Place","2026-02-16T15:02","FIR-2026/0147"],
-  ["9701122334","Bhiwandi","2026-03-02T08:40","FIR-2026/0151"],
-  ["9822334455","Wagle Estate","2026-03-02T02:44","FIR-2026/0151"],
-  ["9833445566","Bhiwandi","2026-03-25T05:10","FIR-2026/0170"],
-  ["9967788991","Andheri East","2026-03-09T12:55","FIR-2026/0158"],
-  ["9701998877","Nehru Place","2026-03-18T16:20","FIR-2026/0163"],
-  ["9701998877","Karol Bagh","2026-03-16T21:08","FIR-2026/0163"],
-  ["9812345678","Sector 62 Noida","2026-02-15T13:35","FIR-2026/0147"]
-];
-
-UNBOUND.SAMPLE_FIR = "Accused Imran Sheikh was questioned regarding a parcel handed over near Vashi. He used mobile 9876543210 and was accompanied by one Manoj Pawar. A courier of Zenith Logistics received \u20b91,15,000 in cash at Vashi. The pair travelled in a van bearing registration MH12AB4521 towards Bhiwandi.";
-
-/* ------------------------------------------------------------------ */
-/*  NLP-lite extraction helpers (ported from crimenet.html)            */
-/* ------------------------------------------------------------------ */
-UNBOUND.FIRST_NAMES = new Set(["Ashok","Imran","Rohit","Deepak","Sana","Vikas","Priya","Manoj","Salim","Farhan","Ritesh","Naveen","Anil","Suresh","Rakesh","Kiran","Meena","Arjun","Nikhil","Rahul","Aisha","Zoya","Kabir","Pooja","Sunil","Amit","Ravi","Neha","Iqbal","Tanvir","Vijay","Gaurav","Sameer","Harish","Jatin","Mohit","Nasir","Omkar","Pankaj","Rizwan"]);
-UNBOUND.GAZ_LOCATIONS = ["Karol Bagh","Nehru Place","Sector 62 Noida","Sector 21","Bhiwandi","Wagle Estate","Andheri East","Kurla West","Vashi","Chandni Chowk","Ghatkopar","Kalamboli","Jubilee Hills","Sarai Kale Khan"];
-UNBOUND.ORG_SUFFIX = ["Traders","Logistics","Exports","Infotech","Motors","Enterprises","Overseas Exports","Solutions","Consultancy","Realtors","Digital","Pvt Ltd"];
-UNBOUND.PERSON_CUES = "accused|co-accused|suspect|complainant|informant|handler|courier|recruiter|associate|accountant|driver|mule|witness|one|Shri|Smt|Mr\\.?|Ms\\.?|Mrs\\.?";
-
-UNBOUND.extractEntities = function(text) {
-  const found = [];
-  const push = (type, label, at, conf, ev) => {
-    if (!label) return;
-    label = label.trim().replace(/\s+/g, " ");
-    if (found.some(f => f.type === type && f.label === label && Math.abs(f.at - at) < 3)) return;
-    found.push({ type, label, at, conf, evidence: ev });
+(function() {
+  // State containers
+  const state = {
+    elements: [],
+    nodes: [],
+    edges: [],
+    nodeMap: new Map(),
+    adj: new Map(),
+    activeTab: 'insights',
+    selectedNodeId: null,
+    searchQuery: '',
+    filterType: 'ALL',
+    filterRisk: 'ALL',
+    nHopDistance: 1,
+    acceptedLeads: new Set(),
+    dismissedLeads: new Set(),
+    graphMetrics: { density: 0, components: 1, avgDegree: 0, maxDegree: 0 }
   };
-  let m;
-  // phones
-  const rePhone = /\b[6-9]\d{9}\b/g;
-  while ((m = rePhone.exec(text))) push("phone", m[0], m.index, 0.99, "10-digit MSISDN pattern");
-  // vehicles
-  const reVeh = /\b([A-Z]{2})[ -]?(\d{1,2})[ -]?([A-Z]{1,3})[ -]?(\d{4})\b/g;
-  while ((m = reVeh.exec(text))) push("vehicle", (m[1]+m[2]+m[3]+m[4]).toUpperCase(), m.index, 0.96, "Indian reg-plate pattern");
-  // persons — role cue
-  const reCue = new RegExp("\\b(?:" + UNBOUND.PERSON_CUES + ")\\s+([A-Z][a-z]+(?:\\s+[A-Z][a-z]+){0,2})", "g");
-  while ((m = reCue.exec(text))) {
-    const name = m[1];
-    const ok = UNBOUND.FIRST_NAMES.has(name.split(" ")[0]) || name.split(" ").length >= 2;
-    if (ok) push("person", name, m.index + m[0].indexOf(name), UNBOUND.FIRST_NAMES.has(name.split(" ")[0]) ? 0.94 : 0.78, "role cue \u201c" + m[0].split(/\s+/)[0] + "\u201d");
+
+  window.UNBOUND.state = state;
+
+  // Forensic type color palette consistent with CrimeNet
+  const TYPE_COLORS = {
+    person: '#2783DE',
+    phone: '#46A171',
+    vehicle: '#D5803B',
+    location: '#BF8EDA',
+    organization: '#4FB9C9',
+    case: '#E56458',
+    fir: '#E56458',
+    account: '#F2A93B',
+    bank: '#F2A93B',
+    entity: '#7D7A75'
+  };
+
+  function getTypeColor(type) {
+    const t = String(type || '').toLowerCase();
+    return TYPE_COLORS[t] || '#6c757d';
   }
-  // persons — gazetteer first name
-  const reName = /\b([A-Z][a-z]+)\s+([A-Z][a-z]+)\b/g;
-  while ((m = reName.exec(text))) {
-    if (!UNBOUND.FIRST_NAMES.has(m[1])) continue;
-    push("person", m[1] + " " + m[2], m.index, 0.9, "known given-name");
+
+  function formatLabel(node) {
+    if (!node) return '';
+    return node.label || node.name || (node.properties && node.properties.name) || node.id || '';
   }
-  // organisations
-  UNBOUND.ORG_SUFFIX.forEach(sfx => {
-    const re = new RegExp("\\b((?:[A-Z][A-Za-z]+\\s+){0,3}" + sfx.replace(/ /g, "\\s+") + ")\\b", "g");
-    let k; while ((k = re.exec(text))) push("organization", k[1], k.index, 0.92, "org suffix \u201c" + sfx + "\u201d");
-  });
-  // locations
-  UNBOUND.GAZ_LOCATIONS.forEach(loc => {
-    const re = new RegExp("\\b" + loc.replace(/ /g, "\\s+") + "\\b", "g");
-    let k; while ((k = re.exec(text))) push("location", loc, k.index, 0.93, "location gazetteer");
-  });
-  // de-dup persons
-  const persons = found.filter(f => f.type === "person").sort((a,b) => b.label.length - a.label.length || b.conf - a.conf);
-  const keep = [];
-  persons.forEach(p => { if (!keep.some(k => Math.abs(k.at - p.at) < 4 || k.label.includes(p.label))) keep.push(p); });
-  const others = found.filter(f => f.type !== "person");
-  const cleaned = others.filter(o => !(o.type === "location" && others.some(x => x.type === "organization" && o.at >= x.at && o.at < x.at + x.label.length)));
-  return keep.concat(cleaned).sort((a, b) => a.at - b.at);
-};
 
-/* ------------------------------------------------------------------ */
-/*  Insights Panel Renderer                                             */
-/* ------------------------------------------------------------------ */
-UNBOUND.renderInsights = function() {
-  const panel = document.getElementById('unbound-insights-panel');
-  if (!panel) return;
+  function getNodeType(node) {
+    if (!node) return 'person';
+    return (node.type || (node.properties && node.properties.type) || 'person').toLowerCase();
+  }
 
-  // Build timeline entries
-  const allEvents = [];
-  UNBOUND.SEED_FIRS.forEach(f => allEvents.push({ ts: f.date, kind: 'fir', label: f.id + ' — ' + f.title, sub: f.station }));
-  UNBOUND.SEED_CDR.forEach(([a, b, ts, dur, cs]) => {
-    const hr = new Date(ts).getHours();
-    allEvents.push({ ts, kind: 'cdr', label: a + ' \u2192 ' + b, sub: dur + 's' + (hr < 5 ? ' \u26a0\ufe0f odd hour' : '') + ' \u00b7 ' + cs });
-  });
-  UNBOUND.SEED_TXN.forEach(([from, to, amt, ts, mode, cs]) => allEvents.push({ ts, kind: 'txn', label: from + ' \u2192 ' + to, sub: mode + ' \u20b9' + amt.toLocaleString('en-IN') + ' \u00b7 ' + cs }));
-  UNBOUND.SEED_PINGS.forEach(([ph, loc, ts, cs]) => allEvents.push({ ts, kind: 'ping', label: ph + ' at ' + loc, sub: cs }));
+  /* ------------------------------------------------------------------ */
+  /*  Graph Analytics Engine                                            */
+  /* ------------------------------------------------------------------ */
+  function parseElements(rawElements) {
+    state.nodeMap.clear();
+    state.adj.clear();
+    state.nodes = [];
+    state.edges = [];
 
-  // Key persons by # of cases
-  const personCases = {};
-  UNBOUND.SEED_FIRS.forEach(f => {
-    const phones_in_text = (f.text.match(/\b[6-9]\d{9}\b/g) || []);
-    const names_in_text = (f.text.match(/\b([A-Z][a-z]+\s+[A-Z][a-z]+)\b/g) || []);
-    names_in_text.forEach(n => { personCases[n] = (personCases[n] || new Set()); personCases[n].add(f.id); });
-    phones_in_text.forEach(p => { personCases[p] = (personCases[p] || new Set()); personCases[p].add(f.id); });
-  });
+    if (!Array.isArray(rawElements)) return;
 
-  // Render key stats
-  const oddHourPairs = {};
-  UNBOUND.SEED_CDR.forEach(([a, b, ts, dur]) => {
-    if (new Date(ts).getHours() < 5) {
-      const k = [a, b].sort().join(' \u2194 ');
-      oddHourPairs[k] = (oddHourPairs[k] || 0) + 1;
+    // First pass: extract nodes
+    rawElements.forEach(el => {
+      const d = el.data || el;
+      if (d && d.id && !d.source) {
+        const id = String(d.id);
+        const type = getNodeType(d);
+        const nodeObj = {
+          id: id,
+          label: formatLabel(d),
+          type: type,
+          properties: d.properties || (d.info && typeof d.info === 'object' ? d.info : {}) || {},
+          degree: 0,
+          inDegree: 0,
+          outDegree: 0
+        };
+        state.nodeMap.set(id, nodeObj);
+        state.nodes.push(nodeObj);
+        state.adj.set(id, []);
+      }
+    });
+
+    // Second pass: extract edges
+    rawElements.forEach(el => {
+      const d = el.data || el;
+      if (d && d.source && d.target) {
+        const src = String(d.source);
+        const tgt = String(d.target);
+        if (state.nodeMap.has(src) && state.nodeMap.has(tgt)) {
+          const edgeObj = {
+            id: String(d.id || `${src}_${tgt}_${state.edges.length}`),
+            source: src,
+            target: tgt,
+            type: d.type || (d.properties && d.properties.type) || 'connected_to',
+            weight: Number(d.weight || (d.properties && d.properties.weight) || 1),
+            properties: d.properties || {}
+          };
+          state.edges.push(edgeObj);
+
+          // Update adjacency
+          state.adj.get(src).push({ neighborId: tgt, edge: edgeObj, dir: 'out' });
+          state.adj.get(tgt).push({ neighborId: src, edge: edgeObj, dir: 'in' });
+
+          const srcNode = state.nodeMap.get(src);
+          const tgtNode = state.nodeMap.get(tgt);
+          srcNode.degree += 1;
+          srcNode.outDegree += 1;
+          tgtNode.degree += 1;
+          tgtNode.inDegree += 1;
+        }
+      }
+    });
+
+    // Compute graph metrics
+    const n = state.nodes.length;
+    const m = state.edges.length;
+    const density = n > 1 ? (2 * m) / (n * (n - 1)) : 0;
+    let maxDeg = 0;
+    let sumDeg = 0;
+    state.nodes.forEach(node => {
+      if (node.degree > maxDeg) maxDeg = node.degree;
+      sumDeg += node.degree;
+    });
+
+    // Connected components via BFS
+    const visited = new Set();
+    let components = 0;
+    state.nodes.forEach(node => {
+      if (!visited.has(node.id)) {
+        components += 1;
+        const q = [node.id];
+        visited.add(node.id);
+        while (q.length > 0) {
+          const curr = q.shift();
+          const neighbors = state.adj.get(curr) || [];
+          neighbors.forEach(nbr => {
+            if (!visited.has(nbr.neighborId)) {
+              visited.add(nbr.neighborId);
+              q.push(nbr.neighborId);
+            }
+          });
+        }
+      }
+    });
+
+    state.graphMetrics = {
+      density: Math.round(density * 1000) / 10,
+      components: components,
+      avgDegree: n > 0 ? (sumDeg / n).toFixed(1) : 0,
+      maxDegree: maxDeg
+    };
+
+    // Auto-select root node if none selected
+    if (!state.selectedNodeId && state.nodes.length > 0) {
+      const topHub = state.nodes.slice().sort((a, b) => b.degree - a.degree)[0];
+      state.selectedNodeId = topHub ? topHub.id : state.nodes[0].id;
     }
-  });
-
-  // Build structured anomalies
-  const anomalies = [];
-  Object.entries(oddHourPairs).forEach(([pair, cnt]) => {
-    if (cnt >= 2) anomalies.push({ sev: cnt >= 3 ? 'high' : 'medium', title: 'Odd-hour call pattern', subject: pair, why: cnt + ' calls between 00:00\u201305:00. Night-time bursts deviate from baseline.' });
-  });
-
-  // Cross-case identifiers
-  const phoneInCases = {};
-  UNBOUND.SEED_CDR.forEach(([a, b, ts, dur, cs]) => {
-    [a, b].forEach(p => { phoneInCases[p] = (phoneInCases[p] || new Set()); phoneInCases[p].add(cs); });
-  });
-  Object.entries(phoneInCases).forEach(([ph, cases]) => {
-    if (cases.size >= 2) anomalies.push({ sev: 'high', title: 'Identifier across cases', subject: ph, why: 'Phone appears in ' + cases.size + ' cases: ' + [...cases].join(', ') });
-  });
-
-  // Structuring alert (Vikas Chauhan repeated near-equal RTGS)
-  const vikasAmts = UNBOUND.SEED_TXN.filter(([f]) => f === 'Vikas Chauhan').map(([,,,a]) => a);
-  if (vikasAmts.length >= 3) {
-    const mu = vikasAmts.reduce((a,b) => a+b,0) / vikasAmts.length;
-    const cv = Math.sqrt(vikasAmts.reduce((s,x) => s+(x-mu)**2,0)/vikasAmts.length) / mu;
-    if (cv < 0.12) anomalies.push({ sev: 'high', title: 'Possible structuring', subject: 'Vikas Chauhan \u2192 Sunrise Traders', why: vikasAmts.length + ' RTGS transfers of near-identical value (\xb1' + Math.round(cv*100) + '%) totalling \u20b9' + vikasAmts.reduce((a,b)=>a+b,0).toLocaleString('en-IN') });
   }
 
-  // Key entities by case count
-  const keyEntities = [
-    { name: '9812345678', type: 'phone', cases: 5, note: 'Appears in FIR-0142, 0147, 0151, 0158, 0163' },
-    { name: 'Deepak Yadav', type: 'person', cases: 3, note: 'Handler — FIR-0147, 0151, 0170' },
-    { name: 'Vikas Chauhan', type: 'person', cases: 2, note: 'Mule accounts — FIR-0147, 0163' },
-    { name: 'Sunrise Traders', type: 'organization', cases: 4, note: 'Fund consolidator across 4 FIRs' },
-    { name: '9701122334', type: 'phone', cases: 3, note: 'Deepak Yadav — FIR-0147, 0151, 0163' },
-    { name: 'Salim Ansari', type: 'person', cases: 2, note: 'Co-accused — FIR-0151, 0170' }
-  ];
+  /* ------------------------------------------------------------------ */
+  /*  Link Prediction (Adamic-Adar & Common Neighbors)                   */
+  /* ------------------------------------------------------------------ */
+  function computeHiddenLinks() {
+    const hiddenLinks = [];
+    const n = state.nodes.length;
+    if (n < 3) return hiddenLinks;
 
-  // Build predicted hidden links (Adamic-Adar inspired)
-  const hiddenLinks = [
-    { a: 'Global Overseas Exports', b: 'Naveen Kumar', score: 82, shared: 2, via: 'Sunrise Traders, Vikas Chauhan', crossCase: true },
-    { a: 'Manoj Pawar', b: '9822334455', score: 60, shared: 1, via: 'Salim Ansari', crossCase: false }
-  ];
+    const directNeighbors = new Map();
+    state.nodes.forEach(node => {
+      const nbrs = new Set((state.adj.get(node.id) || []).map(x => x.neighborId));
+      directNeighbors.set(node.id, nbrs);
+    });
 
-  const typeColors = { person: '#2783DE', phone: '#46A171', vehicle: '#D5803B', location: '#BF8EDA', organization: '#4FB9C9', case: '#E56458' };
-  const dot = t => `<span class="unbound-dot" style="background:${typeColors[t]||'#888'}"></span>`;
-  const badge = (text, cls) => `<span class="unbound-badge ${cls||''}">${text}</span>`;
-  const sevCls = s => s === 'high' ? 'badge-red' : 'badge-orange';
+    for (let i = 0; i < n; i++) {
+      for (let j = i + 1; j < n; j++) {
+        const u = state.nodes[i];
+        const v = state.nodes[j];
+        const pairKey = [u.id, v.id].sort().join('__');
+        if (state.dismissedLeads.has(pairKey)) continue;
 
-  const allEvSorted = allEvents.slice().sort((a, b) => new Date(a.ts) - new Date(b.ts));
-  const kindLabel = { fir: '\uD83D\uDCC4 FIR', cdr: '\uD83D\uDCDE CDR', txn: '\uD83C\uDFE6 TXN', ping: '\uD83D\uDCCD PING' };
+        const uNbrs = directNeighbors.get(u.id);
+        if (uNbrs.has(v.id)) continue;
 
-  panel.innerHTML = `
-    <div class="unbound-section-header">UNBOUND 2026 \u2014 Indian Criminal Network</div>
+        // Find common neighbors
+        const common = [];
+        uNbrs.forEach(wId => {
+          if (directNeighbors.get(v.id).has(wId)) {
+            common.push(state.nodeMap.get(wId));
+          }
+        });
 
-    <!-- KEY ENTITIES -->
-    <div class="unbound-sect-h">Key Entities <span class="unbound-n">${keyEntities.length}</span></div>
-    <div class="unbound-rank">
-      ${keyEntities.map(e => `
-        <div class="unbound-rank-row">
-          ${dot(e.type)} <span class="unbound-nm">${e.name}</span>
-          <div class="unbound-bar"><i style="width:${Math.round((e.cases/5)*100)}%"></i></div>
-          <span class="unbound-vl">${e.cases} cases</span>
-          <div class="unbound-hint">${e.note}</div>
-        </div>`).join('')}
-    </div>
+        if (common.length > 0) {
+          let adamicAdar = 0;
+          common.forEach(w => {
+            const deg = w.degree;
+            adamicAdar += 1 / Math.log2(deg + 1.1);
+          });
 
-    <!-- ANOMALY ALERTS -->
-    <div class="unbound-sect-h" style="margin-top:14px">Anomaly Alerts <span class="unbound-n">${anomalies.length}</span></div>
-    <div class="unbound-card">
-      ${anomalies.map(a => `
-        <div class="unbound-item">
-          <div class="unbound-t">${badge(a.sev, sevCls(a.sev))} <span>${a.title}</span></div>
-          <div class="unbound-why"><b>${a.subject}</b> \u2014 ${a.why}</div>
-        </div>`).join('')}
-    </div>
+          const conf = Math.min(95, Math.round(45 + common.length * 15 + adamicAdar * 12));
+          const accepted = state.acceptedLeads.has(pairKey);
 
-    <!-- HIDDEN LINKS -->
-    <div class="unbound-sect-h" style="margin-top:14px">AI Hidden Links <span class="unbound-n">${hiddenLinks.length}</span></div>
-    <div class="unbound-card">
-      ${hiddenLinks.map(p => `
-        <div class="unbound-item">
-          <div class="unbound-t"><span>${p.a}</span> <span style="color:#999">\u2194</span> <span>${p.b}</span> ${badge(p.score + '%', p.score > 70 ? 'badge-orange' : '')}</div>
-          <div class="unbound-why">No direct link. <b>${p.shared} shared connection(s)</b> via ${p.via}${p.crossCase ? ' \u00b7 spans different cases' : ''}.</div>
-          <div class="unbound-row-actions">
-            <button class="unbound-mini-btn" onclick="UNBOUND.acceptLead('${p.a} \u2194 ${p.b}')">Accept lead</button>
-            <button class="unbound-mini-btn" onclick="UNBOUND.dismissLead('${p.a} \u2194 ${p.b}')">Dismiss</button>
+          hiddenLinks.push({
+            pairKey: pairKey,
+            nodeA: u,
+            nodeB: v,
+            score: conf,
+            shared: common,
+            accepted: accepted
+          });
+        }
+      }
+    }
+
+    return hiddenLinks.sort((a, b) => b.score - a.score).slice(0, 12);
+  }
+
+  /* ------------------------------------------------------------------ */
+  /*  Anomaly Detection (Hubs, Bridges, Cross-Case, Night Bursts)        */
+  /* ------------------------------------------------------------------ */
+  function detectAnomalies() {
+    const anomalies = [];
+    if (state.nodes.length === 0) return anomalies;
+
+    // 1. Hub Anomalies
+    const mean = state.nodes.reduce((s, n) => s + n.degree, 0) / state.nodes.length;
+    const variance = state.nodes.reduce((s, n) => s + Math.pow(n.degree - mean, 2), 0) / state.nodes.length;
+    const std = Math.sqrt(variance);
+    const threshold = Math.max(3, mean + 1.4 * std);
+
+    state.nodes.forEach(node => {
+      if (node.degree >= threshold) {
+        anomalies.push({
+          sev: node.degree >= threshold * 1.3 ? 'high' : 'medium',
+          type: 'Hub / Central Coordinator',
+          badge: 'HUB',
+          subject: `${formatLabel(node)} (${node.id})`,
+          nodeId: node.id,
+          why: `Extreme connectivity: ${node.degree} direct connections (average is ${mean.toFixed(1)}). Acts as central communications hub or mule repository.`
+        });
+      }
+    });
+
+    // 2. Critical Bridge / Bottleneck Nodes (Articulation Points)
+    state.nodes.forEach(node => {
+      if (node.degree >= 2 && (state.adj.get(node.id) || []).length >= 2) {
+        const nbrs = state.adj.get(node.id).map(x => x.neighborId);
+        let hasBridgePattern = false;
+        for (let i = 0; i < nbrs.length; i++) {
+          const nbrA = nbrs[i];
+          const nbrANeighbors = new Set((state.adj.get(nbrA) || []).map(x => x.neighborId));
+          for (let j = i + 1; j < nbrs.length; j++) {
+            const nbrB = nbrs[j];
+            if (!nbrANeighbors.has(nbrB)) {
+              hasBridgePattern = true;
+              break;
+            }
+          }
+          if (hasBridgePattern) break;
+        }
+
+        if (hasBridgePattern && node.degree >= 3) {
+          anomalies.push({
+            sev: 'medium',
+            type: 'Communication Bridge',
+            badge: 'BRIDGE',
+            subject: `${formatLabel(node)} (${node.id})`,
+            nodeId: node.id,
+            why: `Structural bottleneck linking disparate entities. Severing connections to this node disrupts communications between clusters.`
+          });
+        }
+      }
+    });
+
+    // 3. Cross-Case Identifiers
+    state.nodes.forEach(node => {
+      const cases = (node.properties && node.properties.cases) || [];
+      if (Array.isArray(cases) && cases.length >= 2) {
+        anomalies.push({
+          sev: 'high',
+          type: 'Cross-Case Entity',
+          badge: 'MULTI-CASE',
+          subject: `${formatLabel(node)} (${node.id})`,
+          nodeId: node.id,
+          why: `Appears across ${cases.length} independent investigations: ${cases.join(', ')}.`
+        });
+      }
+    });
+
+    // 4. Night-time odd-hour burst communications
+    state.edges.forEach(edge => {
+      const ts = (edge.properties && (edge.properties.timestamp || edge.properties.date || edge.properties.time)) || '';
+      if (ts && ts.includes('T')) {
+        const hr = new Date(ts).getHours();
+        if (hr >= 0 && hr < 5) {
+          anomalies.push({
+            sev: 'medium',
+            type: 'Odd-Hour Interaction',
+            badge: 'NIGHT-BURST',
+            subject: `${formatLabel(state.nodeMap.get(edge.source))} \u2194 ${formatLabel(state.nodeMap.get(edge.target))}`,
+            nodeId: edge.source,
+            why: `Interaction recorded at ${ts.replace('T', ' ')} (00:00\u201305:00 window). Night-time operation deviates from baseline activity.`
+          });
+        }
+      }
+    });
+
+    return anomalies.slice(0, 10);
+  }
+
+  /* ------------------------------------------------------------------ */
+  /*  N-Hop Neighborhood BFS Traversal                                  */
+  /* ------------------------------------------------------------------ */
+  function getNHopNeighborhood(rootId, maxHops) {
+    if (!state.nodeMap.has(rootId)) return { nodesByHop: [], allNodeIds: new Set() };
+
+    const visited = new Map();
+    visited.set(rootId, 0);
+    const queue = [{ id: rootId, hop: 0 }];
+    const nodesByHop = [[state.nodeMap.get(rootId)]];
+
+    for (let h = 1; h <= maxHops; h++) nodesByHop[h] = [];
+
+    while (queue.length > 0) {
+      const curr = queue.shift();
+      if (curr.hop >= maxHops) continue;
+
+      const neighbors = state.adj.get(curr.id) || [];
+      neighbors.forEach(nbr => {
+        if (!visited.has(nbr.neighborId)) {
+          const nextHop = curr.hop + 1;
+          visited.set(nbr.neighborId, nextHop);
+          nodesByHop[nextHop].push(state.nodeMap.get(nbr.neighborId));
+          queue.push({ id: nbr.neighborId, hop: nextHop });
+        }
+      });
+    }
+
+    return {
+      nodesByHop: nodesByHop,
+      allNodeIds: new Set(visited.keys())
+    };
+  }
+
+  /* ------------------------------------------------------------------ */
+  /*  Timeline Events Extractor                                         */
+  /* ------------------------------------------------------------------ */
+  function extractTimeline() {
+    const events = [];
+
+    state.edges.forEach(edge => {
+      const p = edge.properties || {};
+      const ts = p.timestamp || p.date || p.time || p.call_time || p.txn_date;
+      if (ts) {
+        const srcNode = state.nodeMap.get(edge.source);
+        const tgtNode = state.nodeMap.get(edge.target);
+        const sub = [];
+        if (p.duration) sub.push(`${p.duration}s`);
+        if (p.amount) sub.push(`\u20b9${Number(p.amount).toLocaleString('en-IN')}`);
+        if (p.cases) sub.push(Array.isArray(p.cases) ? p.cases.join(', ') : p.cases);
+        if (p.case) sub.push(p.case);
+
+        events.push({
+          date: ts,
+          type: edge.type || 'Interaction',
+          label: `${formatLabel(srcNode)} \u2192 ${formatLabel(tgtNode)}`,
+          sub: sub.join(' \u00b7 ') || edge.type,
+          sourceId: edge.source
+        });
+      }
+    });
+
+    state.nodes.forEach(node => {
+      const p = node.properties || {};
+      const ts = p.date || p.timestamp || p.registration_date;
+      if (ts) {
+        events.push({
+          date: ts,
+          type: node.type.toUpperCase(),
+          label: `${formatLabel(node)} recorded in registry`,
+          sub: (p.cases && p.cases.join(', ')) || node.type,
+          sourceId: node.id
+        });
+      }
+    });
+
+    return events.sort((a, b) => new Date(a.date) - new Date(b.date));
+  }
+
+  /* ------------------------------------------------------------------ */
+  /*  Graph Focus & Cytoscape Actions                                   */
+  /* ------------------------------------------------------------------ */
+  window.UNBOUND.focusNodeInGraph = function(nodeId) {
+    state.selectedNodeId = nodeId;
+    try {
+      const el = document.getElementById('cytoscape');
+      const cy = el && el._cyreg && el._cyreg.cy;
+      if (cy) {
+        cy.nodes().unselect();
+        const n = cy.getElementById(nodeId);
+        if (n && n.length > 0) {
+          n.select();
+          cy.animate({ center: { eles: n }, zoom: 1.4 }, { duration: 450 });
+          window.UNBOUND.showToast(`Centered on ${formatLabel(state.nodeMap.get(nodeId))}`, true);
+        }
+      }
+    } catch (e) { console.warn(e); }
+    window.UNBOUND.renderPanel();
+  };
+
+  window.UNBOUND.highlightNHopInGraph = function(nodeId, hops) {
+    try {
+      const el = document.getElementById('cytoscape');
+      const cy = el && el._cyreg && el._cyreg.cy;
+      if (cy) {
+        cy.elements().unselect();
+        const root = cy.getElementById(nodeId);
+        if (root && root.length > 0) {
+          let current = root;
+          for (let h = 0; h < hops; h++) {
+            current = current.union(current.neighborhood());
+          }
+          current.select();
+          cy.animate({ fit: { eles: current, padding: 50 } }, { duration: 500 });
+          window.UNBOUND.showToast(`Highlighted ${current.nodes().length} entities in ${hops}-hop neighborhood`, true);
+          return;
+        }
+      }
+    } catch (e) { console.warn(e); }
+    window.UNBOUND.showToast(`Selected ${hops}-hop neighborhood for ${nodeId}`, true);
+  };
+
+  window.UNBOUND.focusPairInGraph = function(idA, idB) {
+    try {
+      const el = document.getElementById('cytoscape');
+      const cy = el && el._cyreg && el._cyreg.cy;
+      if (cy) {
+        cy.elements().unselect();
+        const a = cy.getElementById(idA);
+        const b = cy.getElementById(idB);
+        const pair = a.union(b);
+        if (pair.length > 0) {
+          pair.select();
+          cy.animate({ fit: { eles: pair, padding: 70 } }, { duration: 450 });
+          window.UNBOUND.showToast(`Focused pair: ${formatLabel(state.nodeMap.get(idA))} \u2194 ${formatLabel(state.nodeMap.get(idB))}`, true);
+        }
+      }
+    } catch (e) { console.warn(e); }
+  };
+
+  window.UNBOUND.acceptLead = function(pairKey) {
+    state.acceptedLeads.add(pairKey);
+    window.UNBOUND.showToast(`Lead verified & saved to dossier`, true);
+    window.UNBOUND.renderPanel();
+  };
+
+  window.UNBOUND.dismissLead = function(pairKey) {
+    state.dismissedLeads.add(pairKey);
+    window.UNBOUND.showToast(`Lead dismissed`);
+    window.UNBOUND.renderPanel();
+  };
+
+  window.UNBOUND.showToast = function(msg, ok) {
+    let t = document.getElementById('unbound-toast');
+    if (!t) {
+      t = document.createElement('div');
+      t.id = 'unbound-toast';
+      document.body.appendChild(t);
+    }
+    t.innerHTML = (ok ? '<span style="color:#8FD3AB">\u2713</span> ' : '') + msg;
+    t.className = 'unbound-toast on';
+    clearTimeout(window.UNBOUND._toastT);
+    window.UNBOUND._toastT = setTimeout(() => t.className = 'unbound-toast', 2600);
+  };
+
+  /* ------------------------------------------------------------------ */
+  /*  Report Modal Generator                                            */
+  /* ------------------------------------------------------------------ */
+  window.UNBOUND.openReportModal = function() {
+    let modal = document.getElementById('crimenet-report-modal');
+    if (!modal) {
+      modal = document.createElement('div');
+      modal.id = 'crimenet-report-modal';
+      document.body.appendChild(modal);
+    }
+
+    const anomalies = detectAnomalies();
+    const hiddenLinks = computeHiddenLinks();
+    const topEntities = state.nodes.slice().sort((a, b) => b.degree - a.degree).slice(0, 8);
+    const dateStr = new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+
+    modal.innerHTML = `
+      <div class="crimenet-report-backdrop" onclick="document.getElementById('crimenet-report-modal').style.display='none'"></div>
+      <div class="crimenet-report-content">
+        <div class="crimenet-report-header">
+          <div>
+            <div style="font-size:16px;font-weight:700;color:#2C2C2B">CrimeNet Case Intelligence Dossier</div>
+            <div style="font-size:11px;color:#7D7A75">Automated Multi-Source Forensic Analysis \u00b7 Generated ${dateStr}</div>
           </div>
-        </div>`).join('')}
-    </div>
-
-    <!-- DATA SOURCES SUMMARY -->
-    <div class="unbound-sect-h" style="margin-top:14px">Data Sources</div>
-    <div class="unbound-sources">
-      <div class="unbound-src"><span class="unbound-src-dot"></span> FIR / report text <span class="unbound-ct">${UNBOUND.SEED_FIRS.length}</span></div>
-      <div class="unbound-src"><span class="unbound-src-dot"></span> Call detail records <span class="unbound-ct">${UNBOUND.SEED_CDR.length}</span></div>
-      <div class="unbound-src"><span class="unbound-src-dot"></span> Bank transactions <span class="unbound-ct">${UNBOUND.SEED_TXN.length}</span></div>
-      <div class="unbound-src"><span class="unbound-src-dot"></span> Surveillance pings <span class="unbound-ct">${UNBOUND.SEED_PINGS.length}</span></div>
-    </div>
-
-    <!-- TIMELINE -->
-    <div class="unbound-sect-h" style="margin-top:14px">Investigation Timeline <span class="unbound-n">${allEvSorted.length}</span></div>
-    <div class="unbound-tl">
-      ${allEvSorted.map(ev => `
-        <div class="unbound-tl-i">
-          <div class="unbound-d">${ev.ts.replace('T',' ')} <span class="unbound-badge">${kindLabel[ev.kind]||ev.kind}</span></div>
-          <div class="unbound-x">${ev.label} <span style="color:#999;font-size:11px">\u00b7 ${ev.sub}</span></div>
-        </div>`).join('')}
-    </div>
-
-    <div style="margin-top:16px;font-size:11px;color:#999;text-align:center;">
-      \u26a0\ufe0f SYNTHETIC DATA \u2014 for demonstration only. AI leads require investigator verification.
-    </div>
-  `;
-};
-
-UNBOUND.acceptLead = function(pair) {
-  const t = document.getElementById('unbound-toast');
-  if (t) { t.textContent = '\u2713 Lead added: ' + pair; t.className = 'unbound-toast on'; setTimeout(() => t.className = 'unbound-toast', 2600); }
-};
-UNBOUND.dismissLead = function(pair) {
-  const t = document.getElementById('unbound-toast');
-  if (t) { t.textContent = 'Lead dismissed: ' + pair; t.className = 'unbound-toast on'; setTimeout(() => t.className = 'unbound-toast', 2600); }
-};
-
-/* ------------------------------------------------------------------ */
-/*  FIR Ingest Panel                                                   */
-/* ------------------------------------------------------------------ */
-UNBOUND.handleExtract = function() {
-  const ta = document.getElementById('unbound-fir-text');
-  const out = document.getElementById('unbound-ex-out');
-  if (!ta || !out) return;
-  const text = ta.value.trim();
-  if (text.length < 24) {
-    out.innerHTML = '<div class="unbound-hint" style="color:#E56458">Paste at least a sentence of report text.</div>';
-    return;
-  }
-  const entities = UNBOUND.extractEntities(text);
-  const byType = {};
-  entities.forEach(e => byType[e.type] = (byType[e.type] || 0) + 1);
-  const typeColors = { person: '#2783DE', phone: '#46A171', vehicle: '#D5803B', location: '#BF8EDA', organization: '#4FB9C9' };
-  const dot = t => `<span class="unbound-dot" style="background:${typeColors[t]||'#888'}"></span>`;
-  out.innerHTML = `
-    <div class="unbound-card" style="margin-top:10px">
-      <div style="padding:10px">
-        <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
-          <span class="unbound-badge badge-green">\u2713 Extracted</span>
-          <span class="unbound-hint">${entities.length} entities found</span>
+          <button class="unbound-mini-btn" onclick="document.getElementById('crimenet-report-modal').style.display='none'" style="font-size:14px">\u2715</button>
         </div>
-        <div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:9px">
-          ${Object.keys(byType).map(t => `<span class="unbound-chip">${dot(t)} ${t} <span class="unbound-ct">${byType[t]}</span></span>`).join('')}
+        <div class="crimenet-report-body" id="crimenet-printable-report">
+          <div style="background:#F9F8F7;padding:10px;border-radius:6px;margin-bottom:12px;display:grid;grid-template-columns:repeat(4,1fr);gap:8px;text-align:center">
+            <div><div style="font-size:16px;font-weight:700;color:#2783DE">${state.nodes.length}</div><div style="font-size:10px;color:#7D7A75">TOTAL ENTITIES</div></div>
+            <div><div style="font-size:16px;font-weight:700;color:#46A171">${state.edges.length}</div><div style="font-size:10px;color:#7D7A75">RELATIONSHIPS</div></div>
+            <div><div style="font-size:16px;font-weight:700;color:#D5803B">${state.graphMetrics.density}%</div><div style="font-size:10px;color:#7D7A75">DENSITY</div></div>
+            <div><div style="font-size:16px;font-weight:700;color:#E56458">${anomalies.length}</div><div style="font-size:10px;color:#7D7A75">ACTIVE ALERTS</div></div>
+          </div>
+
+          <div style="font-size:12px;font-weight:700;margin:12px 0 6px">1. Key Entities of Interest</div>
+          <table style="width:100%;font-size:11px;border-collapse:collapse;margin-bottom:12px">
+            <tr style="border-bottom:1px solid #E6E5E3;color:#7D7A75;text-align:left">
+              <th style="padding:4px">Entity</th>
+              <th style="padding:4px">Type</th>
+              <th style="padding:4px">Connections</th>
+              <th style="padding:4px">Known Association</th>
+            </tr>
+            ${topEntities.map(e => `
+              <tr style="border-bottom:1px solid #F0EFED">
+                <td style="padding:4px;font-weight:600">${formatLabel(e)}</td>
+                <td style="padding:4px"><span style="color:${getTypeColor(e.type)}">${e.type}</span></td>
+                <td style="padding:4px">${e.degree}</td>
+                <td style="padding:4px;color:#666">${(e.properties && (e.properties.cases ? e.properties.cases.join(', ') : e.properties.role)) || 'Associated in active ring'}</td>
+              </tr>
+            `).join('')}
+          </table>
+
+          <div style="font-size:12px;font-weight:700;margin:12px 0 6px">2. High-Priority Forensic Anomalies</div>
+          <div style="font-size:11px;display:flex;flex-direction:column;gap:6px;margin-bottom:12px">
+            ${anomalies.slice(0, 5).map(a => `
+              <div style="padding:6px 8px;background:#F9F8F7;border-left:3px solid ${a.sev==='high'?'#E56458':'#D5803B'};border-radius:3px">
+                <b>[${a.type}]</b> ${a.subject}: ${a.why}
+              </div>
+            `).join('')}
+          </div>
+
+          <div style="font-size:12px;font-weight:700;margin:12px 0 6px">3. AI Predicted Hidden Links</div>
+          <div style="font-size:11px;display:flex;flex-direction:column;gap:6px;margin-bottom:12px">
+            ${hiddenLinks.slice(0, 4).map(l => `
+              <div style="padding:6px 8px;background:#F9F8F7;border-radius:3px">
+                <b>${formatLabel(l.nodeA)} \u2194 ${formatLabel(l.nodeB)}</b> (${l.score}% confidence)
+                <div style="color:#666;margin-top:2px">Shared intermediaries: ${l.shared.map(formatLabel).join(', ')}</div>
+              </div>
+            `).join('')}
+          </div>
         </div>
-        <div class="unbound-hint" style="margin-top:9px">
-          ${entities.slice(0,8).map(e => `<b>${e.label}</b> <span style="color:#999">${Math.round(e.conf*100)}% \u00b7 ${e.evidence}</span>`).join('<br>')}
+        <div class="crimenet-report-footer">
+          <button class="unbound-btn-primary" onclick="window.print()">\uD83D\uDDA8\uFE0F Print / Save PDF</button>
+          <button class="unbound-btn" onclick="navigator.clipboard.writeText(document.getElementById('crimenet-printable-report').innerText);window.UNBOUND.showToast('Copied report to clipboard', true)">\uD83D\uDCCB Copy</button>
+          <button class="unbound-btn" onclick="document.getElementById('crimenet-report-modal').style.display='none'">Close</button>
         </div>
       </div>
-    </div>`;
-  UNBOUND.showToast('\u2713 Extracted ' + entities.length + ' entities from report text', true);
-};
+    `;
+    modal.style.display = 'flex';
+  };
 
-UNBOUND.loadSample = function() {
-  const ta = document.getElementById('unbound-fir-text');
-  if (ta) { ta.value = UNBOUND.SAMPLE_FIR; ta.focus(); }
-};
+  /* ------------------------------------------------------------------ */
+  /*  Intelligence Panel DOM Renderer                                    */
+  /* ------------------------------------------------------------------ */
+  window.UNBOUND.renderPanel = function() {
+    const panel = document.getElementById('unbound-insights-panel');
+    if (!panel) return;
 
-UNBOUND.showToast = function(msg, ok) {
-  let t = document.getElementById('unbound-toast');
-  if (!t) { t = document.createElement('div'); t.id = 'unbound-toast'; document.body.appendChild(t); }
-  t.innerHTML = (ok ? '<span style="color:#8FD3AB">\u2713</span> ' : '') + msg;
-  t.className = 'unbound-toast on';
-  clearTimeout(UNBOUND._toastT);
-  UNBOUND._toastT = setTimeout(() => t.className = 'unbound-toast', 2800);
-};
-
-/* ------------------------------------------------------------------ */
-/*  Boot — render panel after Dash renders the DOM                     */
-/* ------------------------------------------------------------------ */
-function _unboundWireButtons() {
-  const extractBtn = document.getElementById('unbound-extract-btn');
-  const sampleBtn  = document.getElementById('unbound-sample-btn');
-  if (extractBtn && !extractBtn._ubwired) {
-    extractBtn.addEventListener('click', UNBOUND.handleExtract);
-    extractBtn._ubwired = true;
-  }
-  if (sampleBtn && !sampleBtn._ubwired) {
-    sampleBtn.addEventListener('click', UNBOUND.loadSample);
-    sampleBtn._ubwired = true;
-  }
-}
-
-function _unboundBoot() {
-  if (document.getElementById('unbound-insights-panel')) {
-    UNBOUND.renderInsights();
-    _unboundWireButtons();
-  }
-}
-// Try immediately and also on DOMContentLoaded + observer
-document.addEventListener('DOMContentLoaded', _unboundBoot);
-// MutationObserver to catch Dash's late render
-(function() {
-  const obs = new MutationObserver(function() {
-    if (document.getElementById('unbound-insights-panel')) {
-      UNBOUND.renderInsights();
-      _unboundWireButtons();
-      obs.disconnect();
+    if (state.nodes.length === 0) {
+      panel.innerHTML = `
+        <div style="padding:24px 14px;text-align:center;color:#7D7A75;font-size:12px">
+          <div style="font-size:24px;margin-bottom:8px">\uD83D\uDD0D</div>
+          <div style="font-weight:600;font-size:13px;color:#2C2C2B;margin-bottom:4px">No Active Network Loaded</div>
+          <div>Select a dataset or upload a CSV in the <b>NETWORK</b> tab to generate explorable graph intelligence.</div>
+        </div>
+      `;
+      return;
     }
+
+    const dot = t => `<span class="unbound-dot" style="background:${getTypeColor(t)}"></span>`;
+    const badge = (txt, cls) => `<span class="unbound-badge ${cls||''}">${txt}</span>`;
+    const anomalies = detectAnomalies();
+    const hiddenLinks = computeHiddenLinks();
+
+    // Group entity types for filter pills
+    const typeCounts = {};
+    state.nodes.forEach(n => {
+      typeCounts[n.type] = (typeCounts[n.type] || 0) + 1;
+    });
+
+    // Filter nodes based on search & filter pills
+    const q = state.searchQuery.toLowerCase().trim();
+    const filteredNodes = state.nodes.filter(node => {
+      if (state.filterType !== 'ALL' && node.type !== state.filterType) return false;
+      if (q) {
+        const matchesName = formatLabel(node).toLowerCase().includes(q);
+        const matchesId = node.id.toLowerCase().includes(q);
+        const matchesProp = Object.values(node.properties).some(v => String(v).toLowerCase().includes(q));
+        if (!matchesName && !matchesId && !matchesProp) return false;
+      }
+      return true;
+    });
+
+    // Update bottom status bar dynamically
+    const statusBar = document.getElementById('unbound-status-bar');
+    if (statusBar) {
+      const casesSet = new Set();
+      state.nodes.forEach(n => {
+        if (n.type === 'case') casesSet.add(n.id);
+        if (n.properties && n.properties.cases) {
+          (Array.isArray(n.properties.cases) ? n.properties.cases : [n.properties.cases]).forEach(c => casesSet.add(c));
+        }
+      });
+      statusBar.innerHTML = `
+        <span style="display:flex;align-items:center;gap:4px"><b>${state.nodes.length}</b> entities</span>
+        <span style="display:flex;align-items:center;gap:4px"><b>${state.edges.length}</b> relationships</span>
+        <span style="display:flex;align-items:center;gap:4px"><b>${casesSet.size}</b> cases</span>
+        <span style="display:flex;align-items:center;gap:4px"><b>${anomalies.length}</b> alerts</span>
+        <span style="margin-left:auto;display:flex;align-items:center;font-size:11px;color:#7D7A75">
+          <span id="unbound-status-pulse" style="width:7px;height:7px;border-radius:50%;background:#46A171;display:inline-block;margin-right:5px"></span>
+          Human-in-the-loop \u00b7 AI leads require investigator verification
+        </span>
+      `;
+    }
+
+    // Header & Subnav
+    let html = `
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+        <div style="font-size:13px;font-weight:700;color:#2C2C2B">AI Intelligence</div>
+        <button class="unbound-mini-btn" onclick="window.UNBOUND.openReportModal()" style="color:#2783DE;border-color:#c8e1fa;background:#f2f8fd">
+          \uD83D\uDCC4 Export Dossier
+        </button>
+      </div>
+
+      <!-- Subnav Navigation Pills -->
+      <div class="crimenet-intel-subnav">
+        <button class="intel-nav-pill ${state.activeTab==='insights'?'active':''}" onclick="window.UNBOUND.setSubTab('insights')">Insights</button>
+        <button class="intel-nav-pill ${state.activeTab==='hidden'?'active':''}" onclick="window.UNBOUND.setSubTab('hidden')">Hidden Links (${hiddenLinks.length})</button>
+        <button class="intel-nav-pill ${state.activeTab==='anomalies'?'active':''}" onclick="window.UNBOUND.setSubTab('anomalies')">Anomalies (${anomalies.length})</button>
+        <button class="intel-nav-pill ${state.activeTab==='nhop'?'active':''}" onclick="window.UNBOUND.setSubTab('nhop')">N-Hop & Evidence</button>
+        <button class="intel-nav-pill ${state.activeTab==='timeline'?'active':''}" onclick="window.UNBOUND.setSubTab('timeline')">Timeline</button>
+      </div>
+    `;
+
+    /* -------------------------------------------------- */
+    /* TAB 1: INSIGHTS & NETWORK ANALYSIS                 */
+    /* -------------------------------------------------- */
+    if (state.activeTab === 'insights') {
+      const topEntities = state.nodes.slice().sort((a, b) => b.degree - a.degree).slice(0, 8);
+      const topNode = topEntities[0];
+
+      html += `
+        <!-- Metrics Grid -->
+        <div class="crimenet-metrics-grid">
+          <div class="crimenet-metric-card">
+            <div class="val" style="color:#2783DE">${state.nodes.length}</div>
+            <div class="lbl">ENTITIES</div>
+          </div>
+          <div class="crimenet-metric-card">
+            <div class="val" style="color:#46A171">${state.edges.length}</div>
+            <div class="lbl">LINKS</div>
+          </div>
+          <div class="crimenet-metric-card">
+            <div class="val" style="color:#D5803B">${state.graphMetrics.density}%</div>
+            <div class="lbl">DENSITY</div>
+          </div>
+          <div class="crimenet-metric-card">
+            <div class="val" style="color:#BF8EDA">${state.graphMetrics.components}</div>
+            <div class="lbl">CLUSTERS</div>
+          </div>
+        </div>
+
+        <!-- Explainable Intelligence Brief -->
+        <div class="unbound-sect-h" style="margin-top:10px">Explainable AI Insights</div>
+        <div class="unbound-card" style="font-size:11px;line-height:1.5;padding:8px 10px">
+          ${topNode ? `
+            <div style="margin-bottom:6px">
+              \u2022 <b>Primary Key Broker:</b> <a href="javascript:void(0)" onclick="window.UNBOUND.focusNodeInGraph('${topNode.id}')" style="color:#2783DE;font-weight:600">${formatLabel(topNode)}</a> controls the highest connection density (${topNode.degree} links) across the network.
+            </div>` : ''}
+          <div style="margin-bottom:6px">
+            \u2022 <b>Topology Diagnostics:</b> Network comprises ${state.graphMetrics.components} distinct components with an average degree of ${state.graphMetrics.avgDegree} connections per node.
+          </div>
+          <div>
+            \u2022 <b>Entity Spectrum:</b> Identified ${Object.keys(typeCounts).length} functional entity classes: ${Object.entries(typeCounts).map(([t, c]) => `${c} ${t}s`).join(', ')}.
+          </div>
+        </div>
+
+        <!-- Search and Filter Bar -->
+        <div class="unbound-sect-h" style="margin-top:12px">Search & Filter Entities</div>
+        <div style="margin-bottom:6px">
+          <input type="text" class="crimenet-search-bar" id="crimenet-intel-search"
+                 placeholder="Search entity name, phone, plate, ID..."
+                 value="${state.searchQuery}"
+                 oninput="window.UNBOUND.handleSearch(this.value)" />
+        </div>
+        <div style="display:flex;gap:4px;flex-wrap:wrap;margin-bottom:8px">
+          <button class="crimenet-type-chip ${state.filterType==='ALL'?'active':''}" onclick="window.UNBOUND.setFilterType('ALL')">All (${state.nodes.length})</button>
+          ${Object.entries(typeCounts).map(([t, cnt]) => `
+            <button class="crimenet-type-chip ${state.filterType===t?'active':''}" onclick="window.UNBOUND.setFilterType('${t}')">
+              ${dot(t)} ${t} (${cnt})
+            </button>
+          `).join('')}
+        </div>
+
+        <!-- Key Entities Ranked List -->
+        <div class="unbound-sect-h">Ranked Entities <span class="unbound-n">${filteredNodes.length}</span></div>
+        <div class="unbound-rank">
+          ${filteredNodes.slice(0, 15).map(e => {
+            const maxD = state.graphMetrics.maxDegree || 1;
+            const pct = Math.max(8, Math.round((e.degree / maxD) * 100));
+            const isSel = e.id === state.selectedNodeId;
+            return `
+              <div class="unbound-rank-row ${isSel?'selected-rank':''}" onclick="window.UNBOUND.focusNodeInGraph('${e.id}')" style="cursor:pointer">
+                ${dot(e.type)} <span class="unbound-nm">${formatLabel(e)}</span>
+                <div class="unbound-bar"><i style="width:${pct}%;background:${getTypeColor(e.type)}"></i></div>
+                <span class="unbound-vl">${e.degree} link${e.degree!==1?'s':''}</span>
+                <div class="unbound-hint">${e.type} \u00b7 ID: ${e.id}</div>
+              </div>
+            `;
+          }).join('')}
+        </div>
+      `;
+    }
+
+    /* -------------------------------------------------- */
+    /* TAB 2: HIDDEN LINKS                                */
+    /* -------------------------------------------------- */
+    else if (state.activeTab === 'hidden') {
+      html += `
+        <div class="unbound-sect-h">AI Hidden-Link Prediction <span class="unbound-n">${hiddenLinks.length}</span></div>
+        <div style="font-size:11px;color:#7D7A75;margin-bottom:8px">
+          Inferred using Adamic-Adar triadic closure over indirect shared contacts.
+        </div>
+        ${hiddenLinks.length === 0 ? `
+          <div style="padding:16px;text-align:center;color:#999;font-size:11px">No hidden link anomalies found in current network.</div>
+        ` : `
+          <div class="unbound-card">
+            ${hiddenLinks.map(p => `
+              <div class="unbound-item">
+                <div class="unbound-t">
+                  <a href="javascript:void(0)" onclick="window.UNBOUND.focusNodeInGraph('${p.nodeA.id}')" style="color:#2783DE;font-weight:600">${formatLabel(p.nodeA)}</a>
+                  <span style="color:#999">\u2194</span>
+                  <a href="javascript:void(0)" onclick="window.UNBOUND.focusNodeInGraph('${p.nodeB.id}')" style="color:#2783DE;font-weight:600">${formatLabel(p.nodeB)}</a>
+                  ${badge(p.score + '% Lead', p.score > 70 ? 'badge-orange' : '')}
+                </div>
+                <div class="unbound-why">
+                  No direct link observed. <b>${p.shared.length} shared connection(s)</b> via ${p.shared.map(formatLabel).join(', ')}.
+                </div>
+                <div class="unbound-row-actions">
+                  <button class="unbound-mini-btn" onclick="window.UNBOUND.focusPairInGraph('${p.nodeA.id}', '${p.nodeB.id}')">Focus Pair</button>
+                  ${p.accepted ? `
+                    <span class="unbound-badge badge-green">\u2713 Accepted</span>
+                  ` : `
+                    <button class="unbound-mini-btn" style="color:#46A171" onclick="window.UNBOUND.acceptLead('${p.pairKey}')">Accept Lead</button>
+                    <button class="unbound-mini-btn" style="color:#999" onclick="window.UNBOUND.dismissLead('${p.pairKey}')">Dismiss</button>
+                  `}
+                </div>
+              </div>
+            `).join('')}
+          </div>
+        `}
+      `;
+    }
+
+    /* -------------------------------------------------- */
+    /* TAB 3: ANOMALIES                                   */
+    /* -------------------------------------------------- */
+    else if (state.activeTab === 'anomalies') {
+      html += `
+        <div class="unbound-sect-h">Anomaly Alerts <span class="unbound-n">${anomalies.length}</span></div>
+        <div style="font-size:11px;color:#7D7A75;margin-bottom:8px">
+          Automated structural and operational risk detection.
+        </div>
+        ${anomalies.length === 0 ? `
+          <div style="padding:16px;text-align:center;color:#999;font-size:11px">No critical anomalies detected.</div>
+        ` : `
+          <div class="unbound-card">
+            ${anomalies.map(a => `
+              <div class="unbound-item">
+                <div class="unbound-t">
+                  ${badge(a.badge, a.sev === 'high' ? 'badge-red' : 'badge-orange')}
+                  <span style="font-weight:600">${a.type}</span>
+                </div>
+                <div class="unbound-why" style="margin-top:3px">
+                  <b style="color:#2C2C2B">${a.subject}</b> \u2014 ${a.why}
+                </div>
+                <div class="unbound-row-actions">
+                  <button class="unbound-mini-btn" onclick="window.UNBOUND.focusNodeInGraph('${a.nodeId}')">Focus in Graph</button>
+                  <button class="unbound-mini-btn" onclick="window.UNBOUND.exploreNHopForNode('${a.nodeId}')">Explore N-Hop</button>
+                </div>
+              </div>
+            `).join('')}
+          </div>
+        `}
+      `;
+    }
+
+    /* -------------------------------------------------- */
+    /* TAB 4: N-HOP EXPLORATION & EVIDENCE TRAIL          */
+    /* -------------------------------------------------- */
+    else if (state.activeTab === 'nhop') {
+      const selectedNode = state.nodeMap.get(state.selectedNodeId) || state.nodes[0];
+      const nhopResult = selectedNode ? getNHopNeighborhood(selectedNode.id, state.nHopDistance) : { nodesByHop: [], allNodeIds: new Set() };
+      const directEdges = selectedNode ? (state.adj.get(selectedNode.id) || []) : [];
+
+      html += `
+        <div class="unbound-sect-h">N-Hop Exploration</div>
+        <div class="crimenet-nhop-box">
+          <div style="margin-bottom:6px">
+            <label style="font-size:10px;font-weight:600;color:#7D7A75;display:block;margin-bottom:2px">FOCUS ENTITY</label>
+            <select class="crimenet-search-bar" onchange="window.UNBOUND.setSelectedNode(this.value)">
+              ${state.nodes.map(n => `
+                <option value="${n.id}" ${n.id===state.selectedNodeId?'selected':''}>${formatLabel(n)} (${n.type})</option>
+              `).join('')}
+            </select>
+          </div>
+
+          <div style="margin-bottom:8px">
+            <label style="font-size:10px;font-weight:600;color:#7D7A75;display:block;margin-bottom:4px">EXPLORATION DEPTH</label>
+            <div style="display:flex;gap:4px">
+              <button class="intel-nav-pill ${state.nHopDistance===1?'active':''}" onclick="window.UNBOUND.setNHopDistance(1)">1-Hop (Direct)</button>
+              <button class="intel-nav-pill ${state.nHopDistance===2?'active':''}" onclick="window.UNBOUND.setNHopDistance(2)">2-Hop (Associates)</button>
+              <button class="intel-nav-pill ${state.nHopDistance===3?'active':''}" onclick="window.UNBOUND.setNHopDistance(3)">3-Hop (Extended)</button>
+            </div>
+          </div>
+
+          <div style="font-size:11px;color:#2C2C2B;background:#fff;padding:6px 8px;border-radius:4px;border:1px solid #E6E5E3;margin-bottom:8px">
+            <b>${nhopResult.allNodeIds.size}</b> entities in <b>${state.nHopDistance}-hop</b> radius of <b>${formatLabel(selectedNode)}</b>.
+          </div>
+
+          <div style="display:flex;gap:4px">
+            <button class="unbound-btn-primary" onclick="window.UNBOUND.highlightNHopInGraph('${selectedNode.id}', ${state.nHopDistance})">
+              \uD83D\uDD0E Highlight N-Hop Subgraph
+            </button>
+            <button class="unbound-btn" onclick="window.UNBOUND.focusNodeInGraph('${selectedNode.id}')">
+              \uD83C\uDFAF Center
+            </button>
+          </div>
+        </div>
+
+        <!-- Evidence Trail for Selected Entity -->
+        <div class="unbound-sect-h" style="margin-top:14px">Evidence Trail \u2014 ${formatLabel(selectedNode)}</div>
+        <div class="crimenet-evidence-card">
+          <div style="display:flex;align-items:center;gap:6px;margin-bottom:6px">
+            ${dot(selectedNode.type)}
+            <b style="font-size:12px">${formatLabel(selectedNode)}</b>
+            <span class="unbound-badge" style="background:${getTypeColor(selectedNode.type)}22;color:${getTypeColor(selectedNode.type)}">${selectedNode.type}</span>
+          </div>
+
+          <!-- Known Properties -->
+          <div style="font-size:10px;color:#7D7A75;margin-bottom:8px;line-height:1.4">
+            ${Object.entries(selectedNode.properties || {}).filter(([k]) => k !== 'name' && k !== 'type').map(([k, v]) => `
+              <div><b>${k}:</b> ${Array.isArray(v) ? v.join(', ') : String(v)}</div>
+            `).join('')}
+          </div>
+
+          <!-- Direct Connected Associates -->
+          <div style="font-size:11px;font-weight:600;margin-bottom:4px">Direct Links (${directEdges.length})</div>
+          <div style="max-height:160px;overflow-y:auto">
+            ${directEdges.length === 0 ? `
+              <div style="color:#999;font-size:10px">No connections recorded.</div>
+            ` : directEdges.map(nbr => {
+              const tgt = state.nodeMap.get(nbr.neighborId);
+              return `
+                <div style="display:flex;align-items:center;justify-content:space-between;padding:4px 0;border-bottom:1px solid #F0EFED;font-size:11px">
+                  <div style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:180px">
+                    ${dot(tgt.type)} <a href="javascript:void(0)" onclick="window.UNBOUND.focusNodeInGraph('${tgt.id}')" style="color:#2783DE">${formatLabel(tgt)}</a>
+                  </div>
+                  <span class="unbound-badge" style="font-size:9px">${nbr.edge.type}</span>
+                </div>
+              `;
+            }).join('')}
+          </div>
+        </div>
+      `;
+    }
+
+    /* -------------------------------------------------- */
+    /* TAB 5: INVESTIGATION TIMELINE                      */
+    /* -------------------------------------------------- */
+    else if (state.activeTab === 'timeline') {
+      const timelineEvents = extractTimeline();
+
+      html += `
+        <div class="unbound-sect-h">Investigation Timeline <span class="unbound-n">${timelineEvents.length}</span></div>
+        <div style="font-size:11px;color:#7D7A75;margin-bottom:8px">
+          Chronological event sequencing from call logs, transactions, and incident filings.
+        </div>
+        ${timelineEvents.length === 0 ? `
+          <div style="padding:16px;text-align:center;color:#999;font-size:11px">
+            No temporal/timestamp records detected in this dataset.
+          </div>
+        ` : `
+          <div class="unbound-tl">
+            ${timelineEvents.map(ev => `
+              <div class="unbound-tl-i">
+                <div class="unbound-d">${ev.date.replace('T', ' ')} <span class="unbound-badge">${ev.type}</span></div>
+                <div class="unbound-x">${ev.label}</div>
+                <div style="font-size:10px;color:#7D7A75;margin-top:2px">${ev.sub}</div>
+              </div>
+            `).join('')}
+          </div>
+        `}
+      `;
+    }
+
+    panel.innerHTML = html;
+  };
+
+  /* ------------------------------------------------------------------ */
+  /*  User Interaction Handlers                                         */
+  /* ------------------------------------------------------------------ */
+  window.UNBOUND.setSubTab = function(tabName) {
+    state.activeTab = tabName;
+    window.UNBOUND.renderPanel();
+  };
+
+  window.UNBOUND.handleSearch = function(query) {
+    state.searchQuery = query;
+    window.UNBOUND.renderPanel();
+    const searchInput = document.getElementById('crimenet-intel-search');
+    if (searchInput) {
+      searchInput.focus();
+      searchInput.setSelectionRange(query.length, query.length);
+    }
+  };
+
+  window.UNBOUND.setFilterType = function(type) {
+    state.filterType = type;
+    window.UNBOUND.renderPanel();
+  };
+
+  window.UNBOUND.setNHopDistance = function(distance) {
+    state.nHopDistance = distance;
+    window.UNBOUND.renderPanel();
+  };
+
+  window.UNBOUND.setSelectedNode = function(nodeId) {
+    state.selectedNodeId = nodeId;
+    window.UNBOUND.renderPanel();
+  };
+
+  window.UNBOUND.exploreNHopForNode = function(nodeId) {
+    state.selectedNodeId = nodeId;
+    state.activeTab = 'nhop';
+    window.UNBOUND.renderPanel();
+  };
+
+  /* ------------------------------------------------------------------ */
+  /*  Dash Clientside Callback Bridge                                   */
+  /* ------------------------------------------------------------------ */
+  window.UNBOUND.onNetworkUpdate = function(elements, tapNodeData, tabValue) {
+    if (Array.isArray(elements)) {
+      state.elements = elements;
+      parseElements(elements);
+    }
+
+    if (tapNodeData && tapNodeData.id) {
+      state.selectedNodeId = String(tapNodeData.id);
+    }
+
+    window.UNBOUND.renderPanel();
+  };
+
+  // Initial boot listener
+  document.addEventListener('DOMContentLoaded', () => {
+    setTimeout(window.UNBOUND.renderPanel, 500);
+    setTimeout(window.UNBOUND.renderPanel, 1500);
   });
-  obs.observe(document.body, { childList: true, subtree: true });
+
 })();
-setTimeout(_unboundBoot, 1200);
-setTimeout(_unboundBoot, 2500);

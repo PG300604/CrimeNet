@@ -161,8 +161,8 @@ def init_layout(style, dataset_list, external_dataset_list= []):
                 ])
             ]),
             html.Div(className='three columns', id='sidebar', children=[
-                dcc.Tabs(id='tabs', children=[
-                    dcc.Tab(label='NETWORK', className='tab', id='network-tab', children=[
+                dcc.Tabs(id='tabs', value='tab-network', children=[
+                    dcc.Tab(label='NETWORK', className='tab', id='network-tab', value='tab-network', children=[
                         html.Div(className='input-div', children=[
                             dcc.Dropdown(id='choose-network', className='inputs',
                                          options=dash_formatter.dash_dataset_options(external_dataset_list, dataset_list),
@@ -172,6 +172,19 @@ def init_layout(style, dataset_list, external_dataset_list= []):
                                          placeholder="Select entities ...",
                                          multi=True),
                             html.Button('Load Network', className='inputs', id='load-network-button', n_clicks=0),
+                            dcc.Upload(
+                                id='upload',
+                                className='inputs crimenet-upload-box',
+                                children=html.Div([
+                                    html.Div([
+                                        html.Span('\u2912 ', style={'fontSize': '15px', 'color': '#2783DE'}),
+                                        html.Strong('Upload CSV / File', style={'color': '#2783DE', 'fontSize': '12px'})
+                                    ]),
+                                    html.Div('Drop CSV (calls, txns, links) or click to browse',
+                                             style={'fontSize': '10px', 'color': '#7D7A75', 'marginTop': '2px'})
+                                ], className='crimenet-upload-dropzone'),
+                                multiple=False
+                            ),
                             html.Button('Load From File', className='inputs',
                                         id='load-file-button', n_clicks=0),
                             html.Hr(),
@@ -184,7 +197,7 @@ def init_layout(style, dataset_list, external_dataset_list= []):
                             html.Hr()
                         ])
                     ]),
-                    dcc.Tab(label='ANALYSIS', className='tab', id='analysis-tab', children=[
+                    dcc.Tab(label='ANALYSIS', className='tab', id='analysis-tab', value='tab-analysis', children=[
                         html.Div(className='input-div', id="analysis-input", children=[
                             dcc.Dropdown(className='inputs',
                                          id='choose-analysis',
@@ -210,37 +223,11 @@ def init_layout(style, dataset_list, external_dataset_list= []):
                             html.Hr()
                         ])
                     ]),
-                    dcc.Tab(label='INTELLIGENCE', className='tab', id='intelligence-tab', children=[
+                    dcc.Tab(label='INTELLIGENCE', className='tab', id='intelligence-tab', value='tab-intelligence', children=[
                         html.Div(id='unbound-panel-wrapper', children=[
-                            # --- FIR / Report text ingest card ---
-                            html.Div(id='unbound-fir-card', children=[
-                                html.Div(className='unbound-card-hd', children=[
-                                    html.Span('\u2191', style={'fontSize': '14px', 'color': '#7D7A75'}),
-                                    html.Strong('Ingest FIR / Report Text', style={'fontSize': '12px'})
-                                ]),
-                                html.Div(className='unbound-card-bd', children=[
-                                    html.Textarea(
-                                        id='unbound-fir-text',
-                                        spellCheck=False,
-                                        placeholder='Paste FIR or incident report text here...',
-                                    ),
-                                    html.Div(style={'display': 'flex', 'gap': '6px', 'marginTop': '8px', 'flexWrap': 'wrap'}, children=[
-                                        html.Button('Extract & Link', id='unbound-extract-btn',
-                                                    className='unbound-btn-primary',
-                                                    n_clicks=0),
-                                        html.Button('Sample', id='unbound-sample-btn',
-                                                    className='unbound-btn',
-                                                    n_clicks=0),
-                                    ]),
-                                    html.Div(id='unbound-ex-out'),
-                                    html.P('NLP extracts persons, phones, vehicles, locations and organisations from report text.',
-                                           className='unbound-hint',
-                                           style={'marginTop': '8px', 'fontSize': '11px', 'color': '#999'})
-                                ])
-                            ]),
-                            # --- Insights panel (rendered by unbound_panel.js) ---
+                            # --- Dynamic Intelligence Panel (rendered and maintained by unbound_panel.js) ---
                             html.Div(id='unbound-insights-panel', children=[
-                                html.Div('Loading UNBOUND Intelligence Panel...',
+                                html.Div('CrimeNet AI Intelligence Initializing...',
                                          style={'padding': '20px', 'color': '#999', 'textAlign': 'center', 'fontSize': '12px'})
                             ])
                         ])
@@ -266,6 +253,7 @@ def init_layout(style, dataset_list, external_dataset_list= []):
             ])
         ]),
         html.P(id='hidden-info', children=[]),
+        html.Div(id='unbound-intel-trigger', style={'display': 'none'}),
         html.Div(id='modal', className='modal',
                  children=[advanced_search, edit_element, add_element, delete_element, merge_element,
                            add_node, add_edge, export_image, confirm_load, confirm_load2,
@@ -520,7 +508,7 @@ confirm_file_load = html.Div([
             dbc.ModalHeader("LOAD NETWORK FROM FILE"),
             dbc.ModalBody("Select a network data file from you local drive.", className="centered-modal-body"),
             dbc.ModalFooter([
-                dcc.Upload(dbc.Button("Load File", id="confirm-file-load-button", className="modal-button"), id='upload'),
+                dcc.Upload(dbc.Button("Load File", id="confirm-file-load-button", className="modal-button"), id='upload-modal'),
                 dbc.Button("Cancel", id="close-dialog", className="modal-button")
             ])
         ],
