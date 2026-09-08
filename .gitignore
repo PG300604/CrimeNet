@@ -130,3 +130,6 @@ dmypy.json
 
 # IDE / tool cache
 .freebuff/
+
+# Reference repo folder (user will delete after study)
+repo/

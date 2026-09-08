@@ -127,7 +127,18 @@ def init_layout(style, dataset_list, external_dataset_list= []):
                                    1.00: '1.00',
                                }),
                 ]),
-                html.Div(id='warning-div', children=[]),
+                 html.Div(id='warning-div', children=[
+                     html.Div(id='unbound-status-bar', children=[
+                         html.Span([html.B('47'), ' entities'], style={'display': 'flex', 'alignItems': 'center', 'gap': '4px'}),
+                         html.Span([html.B('102'), ' relationships'], style={'display': 'flex', 'alignItems': 'center', 'gap': '4px'}),
+                         html.Span([html.B('6'), ' cases'], style={'display': 'flex', 'alignItems': 'center', 'gap': '4px'}),
+                         html.Span([html.B('9'), ' alerts'], style={'display': 'flex', 'alignItems': 'center', 'gap': '4px'}),
+                         html.Span([
+                             html.Span(id='unbound-status-pulse', style={'width': '7px', 'height': '7px', 'borderRadius': '50%', 'background': '#46A171', 'display': 'inline-block', 'marginRight': '5px'}),
+                             'Human-in-the-loop \u00b7 AI leads require investigator verification'
+                         ], style={'marginLeft': 'auto', 'display': 'flex', 'alignItems': 'center', 'fontSize': '11px', 'color': '#7D7A75'})
+                     ])
+                 ]),
                 html.Div(id='search-div', children=[
                     dbc.Button(className='interaction-button', id='filter-button', disabled=True)
                 ]),
@@ -197,6 +208,41 @@ def init_layout(style, dataset_list, external_dataset_list= []):
                             ]),
                             html.Button('Analyze', className='inputs', id='analysis-button', n_clicks=0),
                             html.Hr()
+                        ])
+                    ]),
+                    dcc.Tab(label='INTELLIGENCE', className='tab', id='intelligence-tab', children=[
+                        html.Div(id='unbound-panel-wrapper', children=[
+                            # --- FIR / Report text ingest card ---
+                            html.Div(id='unbound-fir-card', children=[
+                                html.Div(className='unbound-card-hd', children=[
+                                    html.Span('\u2191', style={'fontSize': '14px', 'color': '#7D7A75'}),
+                                    html.Strong('Ingest FIR / Report Text', style={'fontSize': '12px'})
+                                ]),
+                                html.Div(className='unbound-card-bd', children=[
+                                    html.Textarea(
+                                        id='unbound-fir-text',
+                                        spellCheck=False,
+                                        placeholder='Paste FIR or incident report text here...',
+                                    ),
+                                    html.Div(style={'display': 'flex', 'gap': '6px', 'marginTop': '8px', 'flexWrap': 'wrap'}, children=[
+                                        html.Button('Extract & Link', id='unbound-extract-btn',
+                                                    className='unbound-btn-primary',
+                                                    n_clicks=0),
+                                        html.Button('Sample', id='unbound-sample-btn',
+                                                    className='unbound-btn',
+                                                    n_clicks=0),
+                                    ]),
+                                    html.Div(id='unbound-ex-out'),
+                                    html.P('NLP extracts persons, phones, vehicles, locations and organisations from report text.',
+                                           className='unbound-hint',
+                                           style={'marginTop': '8px', 'fontSize': '11px', 'color': '#999'})
+                                ])
+                            ]),
+                            # --- Insights panel (rendered by unbound_panel.js) ---
+                            html.Div(id='unbound-insights-panel', children=[
+                                html.Div('Loading UNBOUND Intelligence Panel...',
+                                         style={'padding': '20px', 'color': '#999', 'textAlign': 'center', 'fontSize': '12px'})
+                            ])
                         ])
                     ])
                 ]),

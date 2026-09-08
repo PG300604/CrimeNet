@@ -89,7 +89,8 @@ DATASETS = [
     {'id': 'nist_c1', 'name': 'NIST C1', 'path': '{}/datasets/preprocessed/nist_c1.json'.format(path2root)},
     {'id': 'nist_c2', 'name': 'NIST C2', 'path': '{}/datasets/preprocessed/nist_c2.json'.format(path2root)},
     {'id': 'noordintop', 'name': 'Noordin Top', 'path': '{}/datasets/preprocessed/noordintop.json'.format(path2root)},
-    {'id': 'rhodes_bombing', 'name': 'Rhodes Bombing', 'path': '{}/datasets/preprocessed/rhodes_bombing.json'.format(path2root)}
+    {'id': 'rhodes_bombing', 'name': 'Rhodes Bombing', 'path': '{}/datasets/preprocessed/rhodes_bombing.json'.format(path2root)},
+    {'id': 'unbound_case_2026', 'name': 'UNBOUND — Indian Criminal Network 2026', 'path': '{}/datasets/preprocessed/unbound_case_2026.json'.format(path2root)}
 ]
 
 

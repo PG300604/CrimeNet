@@ -671,3 +671,354 @@ input[type="radio"] {
 }
 
 
+
+/* =====================================================================
+   UNBOUND 2026 Intelligence Panel Styles
+   Ported from crimenet.html (SIH26189 reference implementation)
+   ===================================================================== */
+
+#unbound-panel-wrapper {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif;
+    font-size: 13px;
+    color: #2C2C2B;
+}
+
+.unbound-section-header {
+    background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+    color: #e0e0ff;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.07em;
+    text-transform: uppercase;
+    padding: 9px 12px;
+    border-radius: 7px;
+    margin-bottom: 10px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.unbound-section-header::before {
+    content: '';
+    display: inline-block;
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: #46A171;
+    flex-shrink: 0;
+    animation: unbound-pulse 2s ease-in-out infinite;
+}
+
+@keyframes unbound-pulse {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.5; transform: scale(0.8); }
+}
+
+.unbound-sect-h {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.07em;
+    text-transform: uppercase;
+    color: #7D7A75;
+    margin-bottom: 5px;
+}
+
+.unbound-n {
+    margin-left: auto;
+    font-weight: 600;
+    letter-spacing: 0;
+    font-size: 10px;
+    color: #7D7A75;
+    background: #F0EFED;
+    border-radius: 20px;
+    padding: 1px 6px;
+}
+
+.unbound-card {
+    border: 1px solid #E6E5E3;
+    border-radius: 7px;
+    background: #fff;
+    overflow: hidden;
+    margin-bottom: 4px;
+}
+
+.unbound-item {
+    padding: 9px 11px;
+    border-top: 1px solid #E6E5E3;
+}
+.unbound-item:first-child { border-top: 0; }
+
+.unbound-t {
+    display: flex;
+    gap: 6px;
+    align-items: center;
+    font-size: 12px;
+    font-weight: 600;
+    flex-wrap: wrap;
+}
+
+.unbound-why {
+    font-size: 11px;
+    color: #7D7A75;
+    margin-top: 3px;
+    line-height: 1.4;
+}
+
+.unbound-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+    font-size: 10px;
+    font-weight: 700;
+    padding: 2px 5px;
+    border-radius: 4px;
+    background: #F0EFED;
+    color: #7D7A75;
+    white-space: nowrap;
+}
+
+.badge-red { background: #FCE9E7 !important; color: #a8352a !important; }
+.badge-orange { background: #FBEBDE !important; color: #9c5514 !important; }
+.badge-green { background: #E8F1EC !important; color: #2c6b49 !important; }
+.badge-blue { background: #E5F2FC !important; color: #1a5f9e !important; }
+
+.unbound-dot {
+    display: inline-block;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    flex-shrink: 0;
+}
+
+.unbound-rank { display: flex; flex-direction: column; gap: 1px; }
+.unbound-rank-row {
+    display: grid;
+    grid-template-columns: auto 1fr auto;
+    gap: 4px 7px;
+    align-items: center;
+    padding: 5px 7px;
+    border-radius: 5px;
+    font-size: 12px;
+}
+.unbound-rank-row:hover { background: #F9F8F7; }
+.unbound-nm { font-size: 12px; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; grid-column: 2; }
+.unbound-vl { font-size: 10px; color: #7D7A75; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.unbound-hint { font-size: 10px; color: #999; grid-column: 2; margin-top: -3px; }
+
+.unbound-bar {
+    height: 3px;
+    border-radius: 2px;
+    background: #F0EFED;
+    overflow: hidden;
+    width: 100%;
+    grid-column: 2;
+}
+.unbound-bar i {
+    display: block;
+    height: 100%;
+    background: #2783DE;
+    border-radius: 2px;
+    min-width: 4px;
+}
+
+.unbound-row-actions {
+    display: flex;
+    gap: 5px;
+    margin-top: 7px;
+    flex-wrap: wrap;
+}
+
+.unbound-mini-btn {
+    border: 1px solid #E6E5E3;
+    background: #fff;
+    border-radius: 5px;
+    padding: 2px 7px;
+    font-size: 11px;
+    font-weight: 550;
+    cursor: pointer;
+    transition: background 0.12s;
+    font-family: inherit;
+    color: inherit;
+}
+.unbound-mini-btn:hover { background: #F9F8F7; }
+
+/* FIR Ingest card */
+#unbound-fir-card {
+    border: 1px solid #E6E5E3;
+    border-radius: 7px;
+    background: #fff;
+    overflow: hidden;
+    margin-bottom: 8px;
+}
+.unbound-card-hd {
+    padding: 8px 11px;
+    border-bottom: 1px solid #E6E5E3;
+    background: #F9F8F7;
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    font-size: 12px;
+    font-weight: 650;
+}
+.unbound-card-bd { padding: 10px 11px; }
+
+#unbound-fir-text {
+    width: 100%;
+    min-height: 80px;
+    resize: vertical;
+    border: 1px solid #E6E5E3;
+    border-radius: 6px;
+    padding: 7px 9px;
+    font-size: 11px;
+    color: #2C2C2B;
+    background: #F9F8F7;
+    margin-bottom: 7px;
+    box-sizing: border-box;
+    font-family: Menlo, Consolas, 'SF Mono', monospace;
+}
+#unbound-fir-text:focus { outline: 2px solid #2783DE; outline-offset: 1px; }
+
+.unbound-btn-primary {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 5px;
+    min-height: 30px;
+    padding: 0 11px;
+    border: 1px solid #2783DE;
+    border-radius: 6px;
+    background: #2783DE;
+    color: #fff;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    font-family: inherit;
+    transition: background 0.12s;
+    flex: 1;
+}
+.unbound-btn-primary:hover { background: #1f74c8; }
+
+.unbound-btn {
+    display: inline-flex;
+    align-items: center;
+    min-height: 30px;
+    padding: 0 11px;
+    border: 1px solid #E6E5E3;
+    border-radius: 6px;
+    background: #fff;
+    font-size: 12px;
+    font-weight: 500;
+    cursor: pointer;
+    font-family: inherit;
+    color: inherit;
+    transition: background 0.12s;
+}
+.unbound-btn:hover { background: #F9F8F7; }
+
+.unbound-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    min-height: 26px;
+    padding: 0 8px;
+    border: 1px solid #E6E5E3;
+    border-radius: 6px;
+    background: #fff;
+    font-size: 11px;
+}
+.unbound-ct { font-size: 10px; color: #7D7A75; font-variant-numeric: tabular-nums; }
+
+.unbound-sources { display: flex; flex-direction: column; gap: 4px; margin-bottom: 4px; }
+.unbound-src {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 9px;
+    border: 1px solid #E6E5E3;
+    border-radius: 6px;
+    font-size: 11px;
+    background: #fff;
+}
+.unbound-src-dot { width: 6px; height: 6px; border-radius: 50%; background: #46A171; flex-shrink: 0; }
+
+.unbound-tl {
+    position: relative;
+    padding-left: 16px;
+    max-height: 240px;
+    overflow-y: auto;
+}
+.unbound-tl::before {
+    content: '';
+    position: absolute;
+    left: 3px;
+    top: 6px;
+    bottom: 6px;
+    width: 1px;
+    background: #E6E5E3;
+}
+.unbound-tl-i { position: relative; padding: 0 0 10px; }
+.unbound-tl-i::before {
+    content: '';
+    position: absolute;
+    left: -16px;
+    top: 5px;
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: #fff;
+    border: 2px solid #2783DE;
+}
+.unbound-d { font-size: 10px; color: #7D7A75; }
+.unbound-x { font-size: 11px; margin-top: 2px; }
+
+.unbound-toast {
+    position: fixed;
+    left: 50%;
+    transform: translate(-50%, 14px);
+    bottom: 60px;
+    z-index: 9999;
+    background: #2C2C2B;
+    color: #fff;
+    font-size: 12px;
+    padding: 8px 13px;
+    border-radius: 8px;
+    box-shadow: 0 8px 28px rgba(0,0,0,.22);
+    opacity: 0;
+    transition: opacity .16s, transform .16s;
+    pointer-events: none;
+}
+.unbound-toast.on { opacity: 1; transform: translate(-50%, 0); }
+
+#unbound-insights-panel {
+    max-height: calc(100vh - 180px);
+    overflow-y: auto;
+    padding: 8px 10px 20px 10px;
+}
+
+#unbound-status-bar {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font-size: 11px;
+    color: #7D7A75;
+    flex-wrap: wrap;
+}
+#unbound-status-bar b { color: #2C2C2B; font-weight: 600; }
+
+.unbound-tab-badge {
+    display: inline-flex;
+    align-items: center;
+    font-size: 10px;
+    background: #E5F2FC;
+    color: #1a5f9e;
+    border-radius: 10px;
+    padding: 0 5px;
+    margin-left: 4px;
+    font-weight: 700;
+}
