@@ -161,7 +161,13 @@ def init_layout(style, dataset_list, external_dataset_list= []):
                 ])
             ]),
             html.Div(className='three columns', id='sidebar', children=[
-                dcc.Tabs(id='tabs', value='tab-network', children=[
+                dcc.Tabs(
+                    id='tabs',
+                    value='tab-network',
+                    parent_className='crimenet-tabs-parent',
+                    className='crimenet-tabs-bar',
+                    content_className='crimenet-tabs-content',
+                    children=[
                     dcc.Tab(label='NETWORK', className='tab', id='network-tab', value='tab-network', children=[
                         html.Div(className='input-div', children=[
                             dcc.Dropdown(id='choose-network', className='inputs',

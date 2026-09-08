@@ -565,9 +565,40 @@ window.UNBOUND = window.UNBOUND || {};
   /* ------------------------------------------------------------------ */
   /*  Intelligence Panel DOM Renderer                                    */
   /* ------------------------------------------------------------------ */
+  function tryExtractCytoscapeElements() {
+    const cyElem = document.getElementById('cytoscape');
+    if (cyElem && cyElem._cyreg && cyElem._cyreg.cy) {
+      try {
+        const cy = cyElem._cyreg.cy;
+        const cyElements = cy.elements().jsons();
+        if (Array.isArray(cyElements) && cyElements.length > 0) {
+          state.elements = cyElements;
+          parseElements(cyElements);
+          return true;
+        }
+      } catch (e) {}
+    }
+    if (window.cy && typeof window.cy.elements === 'function') {
+      try {
+        const cyElements = window.cy.elements().jsons();
+        if (Array.isArray(cyElements) && cyElements.length > 0) {
+          state.elements = cyElements;
+          parseElements(cyElements);
+          return true;
+        }
+      } catch (e) {}
+    }
+    return false;
+  }
+  window.UNBOUND.tryExtractCytoscapeElements = tryExtractCytoscapeElements;
+
   window.UNBOUND.renderPanel = function() {
     const panel = document.getElementById('unbound-insights-panel');
     if (!panel) return;
+
+    if (state.nodes.length === 0) {
+      tryExtractCytoscapeElements();
+    }
 
     if (state.nodes.length === 0) {
       panel.innerHTML = `
@@ -953,9 +984,11 @@ window.UNBOUND = window.UNBOUND || {};
   /*  Dash Clientside Callback Bridge                                   */
   /* ------------------------------------------------------------------ */
   window.UNBOUND.onNetworkUpdate = function(elements, tapNodeData, tabValue) {
-    if (Array.isArray(elements)) {
+    if (Array.isArray(elements) && elements.length > 0) {
       state.elements = elements;
       parseElements(elements);
+    } else {
+      tryExtractCytoscapeElements();
     }
 
     if (tapNodeData && tapNodeData.id) {
@@ -965,10 +998,35 @@ window.UNBOUND = window.UNBOUND || {};
     window.UNBOUND.renderPanel();
   };
 
-  // Initial boot listener
+  // Immediate and delayed boot listener
   document.addEventListener('DOMContentLoaded', () => {
-    setTimeout(window.UNBOUND.renderPanel, 500);
-    setTimeout(window.UNBOUND.renderPanel, 1500);
+    setTimeout(() => { tryExtractCytoscapeElements(); window.UNBOUND.renderPanel(); }, 300);
+    setTimeout(() => { tryExtractCytoscapeElements(); window.UNBOUND.renderPanel(); }, 1200);
+    setTimeout(() => { tryExtractCytoscapeElements(); window.UNBOUND.renderPanel(); }, 3000);
   });
+
+  // Click listener on tabs to trigger immediate intelligence rendering
+  document.addEventListener('click', (e) => {
+    const target = e.target;
+    if (target && (target.id === 'intelligence-tab' || (target.closest && (target.closest('#intelligence-tab') || target.closest('.tab'))))) {
+      setTimeout(() => {
+        tryExtractCytoscapeElements();
+        window.UNBOUND.renderPanel();
+      }, 50);
+      setTimeout(() => {
+        tryExtractCytoscapeElements();
+        window.UNBOUND.renderPanel();
+      }, 200);
+    }
+  });
+
+  // Keep intelligence state synced with Cytoscape if graph loaded
+  setInterval(() => {
+    if (state.nodes.length === 0) {
+      if (tryExtractCytoscapeElements()) {
+        window.UNBOUND.renderPanel();
+      }
+    }
+  }, 1200);
 
 })();
