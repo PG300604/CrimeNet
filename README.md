@@ -208,7 +208,7 @@ python visualizer/index.py --host 0.0.0.0
 
 ---
 
-## License
+## License-
 
 Licensed under the ROXANNE Research License. See [LICENSE](LICENSE) for details.
 
