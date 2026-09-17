@@ -670,7 +670,7 @@ window.UNBOUND = window.UNBOUND || {};
       t.id = 'unbound-toast';
       document.body.appendChild(t);
     }
-    t.innerHTML = (ok ? '<span style="color:#8FD3AB">\u2713</span> ' : '') + msg;
+    t.innerHTML = msg;
     t.className = 'unbound-toast on';
     clearTimeout(window.UNBOUND._toastT);
     window.UNBOUND._toastT = setTimeout(() => t.className = 'unbound-toast', 2600);
@@ -748,8 +748,8 @@ window.UNBOUND = window.UNBOUND || {};
           </div>
         </div>
         <div class="crimenet-report-footer">
-          <button class="unbound-btn-primary" onclick="window.print()">\uD83D\uDDA8\uFE0F Print / Save PDF</button>
-          <button class="unbound-btn" onclick="navigator.clipboard.writeText(document.getElementById('crimenet-printable-report').innerText);window.UNBOUND.showToast('Copied report to clipboard', true)">\uD83D\uDCCB Copy</button>
+          <button class="unbound-btn-primary" onclick="window.print()">Print / Save PDF</button>
+          <button class="unbound-btn" onclick="navigator.clipboard.writeText(document.getElementById('crimenet-printable-report').innerText);window.UNBOUND.showToast('Copied report to clipboard', true)">Copy</button>
           <button class="unbound-btn" onclick="document.getElementById('crimenet-report-modal').style.display='none'">Close</button>
         </div>
       </div>
@@ -798,7 +798,6 @@ window.UNBOUND = window.UNBOUND || {};
     if (state.nodes.length === 0) {
       panel.innerHTML = `
         <div style="padding:24px 14px;text-align:center;color:#7D7A75;font-size:12px">
-          <div style="font-size:24px;margin-bottom:8px">\uD83D\uDD0D</div>
           <div style="font-weight:600;font-size:13px;color:#2C2C2B;margin-bottom:4px">No Active Network Loaded</div>
           <div>Select a dataset or upload a CSV in the <b>NETWORK</b> tab to generate explorable graph intelligence.</div>
         </div>
@@ -837,7 +836,7 @@ window.UNBOUND = window.UNBOUND || {};
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
         <div style="font-size:13px;font-weight:700;color:#2C2C2B">AI Intelligence</div>
         <button class="unbound-mini-btn" onclick="window.UNBOUND.openReportModal()" style="color:#2783DE;border-color:#c8e1fa;background:#f2f8fd">
-          \uD83D\uDCC4 Export Dossier
+          Export Dossier
         </button>
       </div>
 
@@ -958,7 +957,7 @@ window.UNBOUND = window.UNBOUND || {};
                 <div class="unbound-row-actions">
                   <button class="unbound-mini-btn" onclick="window.UNBOUND.focusPairByIndex(${idx})">Focus Pair</button>
                   ${p.accepted ? `
-                    <span class="unbound-badge badge-green">\u2713 Accepted</span>
+                    <span class="unbound-badge badge-green">Accepted</span>
                   ` : `
                     <button class="unbound-mini-btn" style="color:#46A171" onclick="window.UNBOUND.acceptLeadByIndex(${idx})">Accept Lead</button>
                     <button class="unbound-mini-btn" style="color:#999" onclick="window.UNBOUND.dismissLeadByIndex(${idx})">Dismiss</button>
@@ -1044,10 +1043,10 @@ window.UNBOUND = window.UNBOUND || {};
 
           <div style="display:flex;gap:4px">
             <button class="unbound-btn-primary" onclick="window.UNBOUND.highlightNHopInGraph(decodeURIComponent('${encodeURIComponent(selectedNode.id)}'), ${state.nHopDistance})">
-              \uD83D\uDD0E Highlight N-Hop Subgraph
+              Highlight N-Hop Subgraph
             </button>
             <button class="unbound-btn" onclick="window.UNBOUND.focusNodeInGraph(decodeURIComponent('${encodeURIComponent(selectedNode.id)}'))">
-              \uD83C\uDFAF Center
+              Center
             </button>
           </div>
         </div>

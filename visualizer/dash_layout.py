@@ -169,15 +169,8 @@ def init_layout(style, dataset_list, external_dataset_list= []):
                             html.Button('Load Network', className='inputs', id='load-network-button', n_clicks=0),
                             dcc.Upload(
                                 id='upload',
-                                className='inputs crimenet-upload-box',
-                                children=html.Div([
-                                    html.Div([
-                                        html.Span('\u2912 ', style={'fontSize': '15px', 'color': '#2783DE'}),
-                                        html.Strong('Upload CSV / File', style={'color': '#2783DE', 'fontSize': '12px'})
-                                    ]),
-                                    html.Div('Drop CSV (calls, txns, links) or click to browse',
-                                             style={'fontSize': '10px', 'color': '#7D7A75', 'marginTop': '2px'})
-                                ], className='crimenet-upload-dropzone'),
+                                className='inputs crimenet-upload-wrapper',
+                                children=html.Button('Upload CSV / File', className='inputs', id='upload-button'),
                                 multiple=False
                             ),
                             html.Button('Load From File', className='inputs',

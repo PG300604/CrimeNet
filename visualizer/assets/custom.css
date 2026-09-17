@@ -1141,19 +1141,26 @@ input[type="radio"] {
 }
 
 /* --- CrimeNet Direct CSV Upload --- */
-.crimenet-upload-dropzone {
-    padding: 8px 6px;
-    text-align: center;
-    border: 1.5px dashed #2783DE;
-    border-radius: 6px;
-    background: rgba(39, 131, 222, 0.04);
+.crimenet-upload-wrapper {
+    margin-bottom: 6px;
+    width: 100%;
+    padding: 0;
+    border: none;
+    background: transparent;
     cursor: pointer;
-    transition: background 0.15s, border-color 0.15s;
-    margin: 4px 0 6px 0;
+    box-sizing: border-box;
+    display: block;
 }
-.crimenet-upload-dropzone:hover {
-    background: rgba(39, 131, 222, 0.08);
-    border-color: #1f74c8;
+
+.crimenet-upload-wrapper > button {
+    pointer-events: none;
+    margin-bottom: 0;
+    width: 100%;
+}
+.crimenet-upload-wrapper:hover > button {
+    color: #333;
+    border-color: #888;
+    outline: 0;
 }
 
 /* --- CrimeNet Intelligence Subnav & Pills --- */
