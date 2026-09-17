@@ -4,11 +4,12 @@
 		"style": {
 			"text-wrap": "wrap",
 			"label": "data(label)",
-			"font-size": "0.6em",
+			"font-size": "0.55em",
+			"text-max-width": "140px",
+			"min-zoomed-font-size": 5,
 			"background-color": "grey",
 			"width": "25vh",
 			"height": "25vh",
-			"text-wrap": "wrap",
 			"z-index": 10,
 			"z-index-compare": "manual",
 			"text-events": "yes"

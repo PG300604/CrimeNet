@@ -2,6 +2,7 @@
     display: flex;
     flex-direction: column;
     width: 76%;
+    position: relative;
 }
 
 #sidebar {
@@ -1329,4 +1330,73 @@ input[type="radio"] {
     gap: 8px;
     background: #F9F8F7;
 }
+
+/* ------------------------------------------------------------------ */
+/* Floating Steady Zoom Controls Toolbar                              */
+/* ------------------------------------------------------------------ */
+.crimenet-zoom-controls {
+    position: absolute;
+    bottom: 22px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 50;
+    display: flex;
+    align-items: center;
+    background: #ffffff;
+    border: 1px solid #d0d7de;
+    border-radius: 20px;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
+    padding: 3px 6px;
+    gap: 2px;
+    user-select: none;
+}
+
+.crimenet-zoom-controls button {
+    background: transparent;
+    border: none;
+    outline: none;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+    border-radius: 14px;
+    color: #333333;
+    transition: background-color 0.15s ease, color 0.15s ease;
+    padding: 0;
+    font-size: 11px;
+    font-weight: 600;
+}
+
+.crimenet-zoom-controls button:hover {
+    background: #f0f4f8;
+    color: #2783DE;
+}
+
+.crimenet-zoom-controls button:active {
+    background: #e2eaf2;
+}
+
+#crimenet-zoom-level {
+    font-size: 11px;
+    font-weight: 700;
+    color: #444444;
+    width: 44px;
+    border-radius: 10px;
+    cursor: pointer;
+}
+
+#crimenet-zoom-level:hover {
+    color: #2783DE;
+    background: #f0f4f8;
+}
+
+.crimenet-zoom-sep {
+    width: 1px;
+    height: 16px;
+    background: #d0d7de;
+    margin: 0 2px;
+}
+
 

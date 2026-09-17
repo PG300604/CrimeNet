@@ -33,6 +33,8 @@ def init_layout(style, dataset_list, external_dataset_list= []):
                     layout={'name': 'cose-bilkent'},
                     elements=[],
                     responsive=True,
+                    minZoom=0.2,
+                    maxZoom=2.2,
                     # autoRefreshLayout=False
                 ),
                 cyto.Cytoscape(
@@ -42,6 +44,8 @@ def init_layout(style, dataset_list, external_dataset_list= []):
                     layout={'name': 'cose-bilkent'},
                     elements=[],
                     responsive=True,
+                    minZoom=0.2,
+                    maxZoom=2.2,
                     # autoRefreshLayout=False
                 ),
                 html.Div(id='element-interaction-container', hidden=True, children=[

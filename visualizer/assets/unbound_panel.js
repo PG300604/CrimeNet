@@ -531,22 +531,269 @@ window.UNBOUND = window.UNBOUND || {};
     }
   }
 
-  function bindCytoscapeListeners(cy) {
-    if (!cy || cy._crimenetTapBound) return;
-    try {
-      if (typeof cy.on === 'function') {
-        cy.on('tap', (evt) => {
-          if (evt.target === cy) {
-            clearGraphHighlights();
-          } else if (evt.target && typeof evt.target.isNode === 'function' && evt.target.isNode()) {
-            const nid = evt.target.id();
-            state.selectedNodeId = nid;
-            window.UNBOUND.renderPanel();
-          }
-        });
-        cy._crimenetTapBound = true;
+  /* ------------------------------------------------------------------ */
+  /*  Steady & Controlled Zoom Engine                                    */
+  /* ------------------------------------------------------------------ */
+  const MIN_ZOOM = 0.25;
+  const MAX_ZOOM = 2.2;
+
+  function getActiveCytoscape() {
+    const el = document.getElementById('cytoscape');
+    if (el && el._cyreg && el._cyreg.cy) return el._cyreg.cy;
+    const elUnaltered = document.getElementById('cytoscape-unaltered');
+    if (elUnaltered && !elUnaltered.classList.contains('cytoscape-unaltered-hidden') && elUnaltered._cyreg && elUnaltered._cyreg.cy) {
+      return elUnaltered._cyreg.cy;
+    }
+    if (window.cy && typeof window.cy.zoom === 'function') return window.cy;
+    return null;
+  }
+
+  function getActiveContainer() {
+    const el = document.getElementById('cytoscape');
+    if (el && el._cyreg && el._cyreg.cy) return el;
+    const elUnaltered = document.getElementById('cytoscape-unaltered');
+    if (elUnaltered && !elUnaltered.classList.contains('cytoscape-unaltered-hidden') && elUnaltered._cyreg && elUnaltered._cyreg.cy) {
+      return elUnaltered;
+    }
+    return el || null;
+  }
+
+  function updateZoomDisplay(zoomLevel) {
+    const lbl = document.getElementById('crimenet-zoom-level');
+    if (!lbl) return;
+    const cy = getActiveCytoscape();
+    const z = typeof zoomLevel === 'number' ? zoomLevel : (cy ? cy.zoom() : 1.0);
+    lbl.textContent = Math.round(z * 100) + '%';
+  }
+
+  function setupSteadyZoom(container) {
+    if (!container || container._crimenetSteadyZoomAttached) return;
+    container._crimenetSteadyZoomAttached = true;
+
+    // Capture-phase wheel listener to intercept and replace Cytoscape's default twitchy zooming
+    container.addEventListener('wheel', function(e) {
+      const cy = container._cyreg && container._cyreg.cy;
+      if (!cy) return;
+
+      // Prevent runaway zoom & jumpiness
+      e.preventDefault();
+      e.stopPropagation();
+      e.stopImmediatePropagation();
+
+      let dy = e.deltaY;
+      if (e.deltaMode === 1) {
+        dy *= 30; // Line mode normalize
+      } else if (e.deltaMode === 2) {
+        dy *= 100; // Page mode normalize
       }
-    } catch(e) {}
+
+      const absDy = Math.abs(dy);
+      if (absDy < 1) return;
+
+      // Clamped steady scaling factor:
+      // ~6-8% change per standard wheel notch instead of Cytoscape's default 25-35%
+      const step = Math.min(0.08, Math.max(0.03, absDy * 0.0006));
+      const factor = dy < 0 ? (1 + step) : (1 / (1 + step));
+
+      const currentZoom = cy.zoom();
+      let targetZoom = currentZoom * factor;
+      targetZoom = Math.max(MIN_ZOOM, Math.min(MAX_ZOOM, targetZoom));
+
+      if (Math.abs(targetZoom - currentZoom) > 0.0005) {
+        const rect = container.getBoundingClientRect();
+        const renderedPos = {
+          x: e.clientX - rect.left,
+          y: e.clientY - rect.top
+        };
+
+        cy.zoom({
+          level: targetZoom,
+          renderedPosition: renderedPos
+        });
+
+        updateZoomDisplay(targetZoom);
+      }
+    }, { capture: true, passive: false });
+  }
+
+  function smoothZoomStep(factor) {
+    const cy = getActiveCytoscape();
+    const container = getActiveContainer();
+    if (!cy || !container) return;
+
+    const currentZoom = cy.zoom();
+    let targetZoom = currentZoom * factor;
+    targetZoom = Math.max(MIN_ZOOM, Math.min(MAX_ZOOM, targetZoom));
+
+    if (Math.abs(targetZoom - currentZoom) < 0.001) return;
+
+    const rect = container.getBoundingClientRect();
+    const centerPos = {
+      x: rect.width / 2,
+      y: rect.height / 2
+    };
+
+    cy.stop();
+    cy.animate({
+      zoom: {
+        level: targetZoom,
+        renderedPosition: centerPos
+      },
+      duration: 200,
+      easing: 'ease-out-cubic'
+    });
+
+    updateZoomDisplay(targetZoom);
+  }
+
+  function smoothResetZoom() {
+    const cy = getActiveCytoscape();
+    const container = getActiveContainer();
+    if (!cy || !container) return;
+
+    const rect = container.getBoundingClientRect();
+    cy.stop();
+    cy.animate({
+      zoom: {
+        level: 1.0,
+        renderedPosition: { x: rect.width / 2, y: rect.height / 2 }
+      },
+      duration: 220,
+      easing: 'ease-out-cubic'
+    });
+    updateZoomDisplay(1.0);
+  }
+
+  function smoothFitGraph() {
+    const cy = getActiveCytoscape();
+    if (!cy) return;
+    cy.stop();
+    cy.animate({
+      fit: {
+        eles: cy.elements(),
+        padding: 45
+      },
+      duration: 250,
+      easing: 'ease-out-cubic',
+      complete: () => updateZoomDisplay()
+    });
+  }
+
+  function smoothCenterGraph() {
+    const cy = getActiveCytoscape();
+    if (!cy) return;
+    cy.stop();
+    cy.animate({
+      center: {
+        eles: cy.elements()
+      },
+      duration: 220,
+      easing: 'ease-out-cubic',
+      complete: () => updateZoomDisplay()
+    });
+  }
+
+  function ensureZoomControls() {
+    const main = document.getElementById('main');
+    if (!main) return;
+
+    const cyElem = document.getElementById('cytoscape');
+    if (cyElem) setupSteadyZoom(cyElem);
+    const cyUnaltered = document.getElementById('cytoscape-unaltered');
+    if (cyUnaltered) setupSteadyZoom(cyUnaltered);
+
+    if (document.getElementById('crimenet-zoom-controls')) {
+      updateZoomDisplay();
+      return;
+    }
+
+    const bar = document.createElement('div');
+    bar.id = 'crimenet-zoom-controls';
+    bar.className = 'crimenet-zoom-controls';
+    bar.innerHTML = `
+      <button id="crimenet-zoom-out-btn" type="button" title="Zoom Out (-)" aria-label="Zoom Out">-</button>
+      <button id="crimenet-zoom-level" type="button" title="Reset Zoom to 100% (0)" aria-label="Reset Zoom">100%</button>
+      <button id="crimenet-zoom-in-btn" type="button" title="Zoom In (+)" aria-label="Zoom In">+</button>
+      <span class="crimenet-zoom-sep"></span>
+      <button id="crimenet-zoom-fit-btn" type="button" title="Fit Network to View (F)" aria-label="Fit to View">FIT</button>
+      <button id="crimenet-zoom-center-btn" type="button" title="Center Network" aria-label="Center Network">CTR</button>
+    `;
+
+    main.appendChild(bar);
+
+    document.getElementById('crimenet-zoom-out-btn').addEventListener('click', (e) => {
+      e.stopPropagation();
+      smoothZoomStep(1 / 1.25);
+    });
+    document.getElementById('crimenet-zoom-in-btn').addEventListener('click', (e) => {
+      e.stopPropagation();
+      smoothZoomStep(1.25);
+    });
+    document.getElementById('crimenet-zoom-level').addEventListener('click', (e) => {
+      e.stopPropagation();
+      smoothResetZoom();
+    });
+    document.getElementById('crimenet-zoom-fit-btn').addEventListener('click', (e) => {
+      e.stopPropagation();
+      smoothFitGraph();
+    });
+    document.getElementById('crimenet-zoom-center-btn').addEventListener('click', (e) => {
+      e.stopPropagation();
+      smoothCenterGraph();
+    });
+
+    updateZoomDisplay();
+  }
+
+  if (!window._crimenetZoomKeysBound) {
+    window._crimenetZoomKeysBound = true;
+    window.addEventListener('keydown', (e) => {
+      const tag = (document.activeElement && document.activeElement.tagName) || '';
+      if (tag === 'INPUT' || tag === 'TEXTAREA' || (document.activeElement && document.activeElement.isContentEditable)) {
+        return;
+      }
+      if (e.key === '+' || e.key === '=') {
+        e.preventDefault();
+        smoothZoomStep(1.2);
+      } else if (e.key === '-' || e.key === '_') {
+        e.preventDefault();
+        smoothZoomStep(1 / 1.2);
+      } else if (e.key === '0') {
+        e.preventDefault();
+        smoothResetZoom();
+      } else if (e.key === 'f' || e.key === 'F') {
+        e.preventDefault();
+        smoothFitGraph();
+      }
+    });
+  }
+
+  function bindCytoscapeListeners(cy) {
+    if (!cy) return;
+    ensureZoomControls();
+    if (!cy._crimenetTapBound) {
+      try {
+        if (typeof cy.on === 'function') {
+          cy.on('tap', (evt) => {
+            if (evt.target === cy) {
+              clearGraphHighlights();
+            } else if (evt.target && typeof evt.target.isNode === 'function' && evt.target.isNode()) {
+              const nid = evt.target.id();
+              state.selectedNodeId = nid;
+              window.UNBOUND.renderPanel();
+            }
+          });
+          cy.on('zoom', () => {
+            updateZoomDisplay(cy.zoom());
+          });
+          try {
+            if (typeof cy.minZoom === 'function') cy.minZoom(MIN_ZOOM);
+            if (typeof cy.maxZoom === 'function') cy.maxZoom(MAX_ZOOM);
+          } catch (e) {}
+          cy._crimenetTapBound = true;
+        }
+      } catch(e) {}
+    }
   }
 
   function clearGraphHighlights() {
@@ -896,6 +1143,7 @@ window.UNBOUND = window.UNBOUND || {};
   /*  Intelligence Panel DOM Renderer                                    */
   /* ------------------------------------------------------------------ */
   function tryExtractCytoscapeElements() {
+    ensureZoomControls();
     const cyElem = document.getElementById('cytoscape');
     if (cyElem && cyElem._cyreg && cyElem._cyreg.cy) {
       try {
@@ -1327,9 +1575,10 @@ window.UNBOUND = window.UNBOUND || {};
 
   // Immediate and delayed boot listener
   document.addEventListener('DOMContentLoaded', () => {
-    setTimeout(() => { tryExtractCytoscapeElements(); window.UNBOUND.renderPanel(); }, 300);
-    setTimeout(() => { tryExtractCytoscapeElements(); window.UNBOUND.renderPanel(); }, 1200);
-    setTimeout(() => { tryExtractCytoscapeElements(); window.UNBOUND.renderPanel(); }, 3000);
+    ensureZoomControls();
+    setTimeout(() => { ensureZoomControls(); tryExtractCytoscapeElements(); window.UNBOUND.renderPanel(); }, 300);
+    setTimeout(() => { ensureZoomControls(); tryExtractCytoscapeElements(); window.UNBOUND.renderPanel(); }, 1200);
+    setTimeout(() => { ensureZoomControls(); tryExtractCytoscapeElements(); window.UNBOUND.renderPanel(); }, 3000);
   });
 
   // Click listener on tabs to trigger immediate intelligence rendering
@@ -1337,10 +1586,12 @@ window.UNBOUND = window.UNBOUND || {};
     const target = e.target;
     if (target && (target.id === 'intelligence-tab' || (target.closest && (target.closest('#intelligence-tab') || target.closest('.tab'))))) {
       setTimeout(() => {
+        ensureZoomControls();
         tryExtractCytoscapeElements();
         window.UNBOUND.renderPanel();
       }, 50);
       setTimeout(() => {
+        ensureZoomControls();
         tryExtractCytoscapeElements();
         window.UNBOUND.renderPanel();
       }, 200);
@@ -1349,6 +1600,7 @@ window.UNBOUND = window.UNBOUND || {};
 
   // Keep intelligence state synced with Cytoscape if graph loaded
   setInterval(() => {
+    ensureZoomControls();
     if (state.nodes.length === 0) {
       if (tryExtractCytoscapeElements()) {
         window.UNBOUND.renderPanel();
