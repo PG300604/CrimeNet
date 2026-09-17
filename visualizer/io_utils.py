@@ -77,10 +77,7 @@ def get_external_data(directory):
 
 if __name__ == '__main__':
     # Just for testing. Replace by actual paths.
-    # Add actual command line argument parsing for use as a command line tool.
-    new_to_old_file('datasets/preprocessed/graph_roxanne_roxsd_v3_ucsc.json',
-                    'datasets/preprocessed/graph_roxanne_roxsd_v3_ucsc_old_format.json')
-    new_to_old_file('datasets/preprocessed/graph_phone_number_roxsd_v3_ucsc.json',
-                    'datasets/preprocessed/graph_phone_number_roxsd_v3_ucsc_old_format.json')
-    new_to_old_file('datasets/preprocessed/graph_groundtruth_roxsd_v3_ucsc.json',
-                    'datasets/preprocessed/graph_groundtruth_roxsd_v3_ucsc_old_format.json')
+    # Example usage:
+    # new_to_old_file('datasets/preprocessed/graph_sample.json',
+    #                 'datasets/preprocessed/graph_sample_old_format.json')
+    pass
