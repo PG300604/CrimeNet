@@ -393,7 +393,7 @@ hr {
     border: 1px solid #d0d7de;
     border-radius: 6px;
     width: auto;
-    max-width: 55%;
+    max-width: calc(100% - 250px);
     position: absolute;
     bottom: 14px;
     left: 14px;
@@ -401,9 +401,13 @@ hr {
     padding: 6px 14px;
     font-size: 11px;
     font-weight: 600;
-    color: #b45309;
+    color: #15803d;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
     z-index: 15;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    box-sizing: border-box;
 }
 
 #warning-div:empty {
@@ -742,10 +746,10 @@ body.modal-open {
 
 #element-interaction-container {
     position: absolute;
-    bottom: 24px;
+    bottom: 56px;
     left: 14px;
     z-index: 15;
-    max-height: 65vh;
+    max-height: calc(100vh - 120px);
     overflow-y: auto;
     display: flex;
     flex-direction: column;
@@ -1516,9 +1520,8 @@ input[type="radio"] {
 /* ------------------------------------------------------------------ */
 .crimenet-zoom-controls {
     position: absolute;
-    bottom: 22px;
-    left: 50%;
-    transform: translateX(-50%);
+    bottom: 16px;
+    right: 14px;
     z-index: 50;
     display: flex;
     align-items: center;
