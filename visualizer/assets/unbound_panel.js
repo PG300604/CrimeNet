@@ -23,6 +23,7 @@ window.UNBOUND = window.UNBOUND || {};
     nHopDistance: 1,
     acceptedLeads: new Set(),
     dismissedLeads: new Set(),
+    activeFocusState: null,
     graphMetrics: { density: 0, components: 1, avgDegree: 0, maxDegree: 0 }
   };
 
@@ -404,6 +405,15 @@ window.UNBOUND = window.UNBOUND || {};
       if (typeof cy.style === 'function') {
         const s = cy.style();
         if (s && typeof s.selector === 'function') {
+          s.selector('node').style({
+            'z-index-compare': 'manual',
+            'z-index': 10,
+            'text-events': 'yes'
+          });
+          s.selector('edge').style({
+            'z-index-compare': 'manual',
+            'z-index': 5
+          });
           s.selector('.crimenet-focus-pair').style({
             'border-width': '4vh',
             'border-style': 'solid',
@@ -413,11 +423,15 @@ window.UNBOUND = window.UNBOUND || {};
             'font-weight': 'bold',
             'font-size': '0.75em',
             'text-background-color': '#ffffff',
-            'text-background-opacity': 0.9,
-            'text-background-padding': '3px',
+            'text-background-opacity': 0.95,
+            'text-background-padding': '4px',
             'width': '34vh',
             'height': '34vh',
-            'z-index': 9999,
+            'z-index': 99999,
+            'z-index-compare': 'manual',
+            'z-compound-depth': 'top',
+            'events': 'yes',
+            'text-events': 'yes',
             'opacity': 1
           });
           s.selector('.crimenet-intermediary').style({
@@ -429,12 +443,36 @@ window.UNBOUND = window.UNBOUND || {};
             'font-weight': 'bold',
             'font-size': '0.65em',
             'text-background-color': '#ffffff',
-            'text-background-opacity': 0.9,
-            'text-background-padding': '2px',
+            'text-background-opacity': 0.95,
+            'text-background-padding': '3px',
             'width': '28vh',
             'height': '28vh',
-            'z-index': 9990,
+            'z-index': 99990,
+            'z-index-compare': 'manual',
+            'z-compound-depth': 'top',
+            'events': 'yes',
+            'text-events': 'yes',
             'opacity': 1
+          });
+          s.selector('.crimenet-focus-pair[?selected]').style({
+            'border-width': '5.5vh',
+            'border-style': 'solid',
+            'border-color': '#2783DE',
+            'z-index': 99999,
+            'z-index-compare': 'manual',
+            'z-compound-depth': 'top',
+            'events': 'yes',
+            'text-events': 'yes'
+          });
+          s.selector('.crimenet-intermediary[?selected]').style({
+            'border-width': '4.5vh',
+            'border-style': 'solid',
+            'border-color': '#2783DE',
+            'z-index': 99999,
+            'z-index-compare': 'manual',
+            'z-compound-depth': 'top',
+            'events': 'yes',
+            'text-events': 'yes'
           });
           s.selector('edge.crimenet-focus-edge').style({
             'line-color': '#2783DE',
@@ -442,7 +480,8 @@ window.UNBOUND = window.UNBOUND || {};
             'width': '4px',
             'line-style': 'dashed',
             'arrow-scale': 1.1,
-            'z-index': 9980,
+            'z-index': 99800,
+            'z-index-compare': 'manual',
             'opacity': 1
           });
           s.selector('.crimenet-nhop-node').style({
@@ -452,19 +491,36 @@ window.UNBOUND = window.UNBOUND || {};
             'background-color': '#2783DE',
             'color': '#000000',
             'text-background-color': '#ffffff',
-            'text-background-opacity': 0.9,
-            'z-index': 9990,
+            'text-background-opacity': 0.95,
+            'text-background-padding': '3px',
+            'z-index': 99990,
+            'z-index-compare': 'manual',
+            'z-compound-depth': 'top',
+            'events': 'yes',
+            'text-events': 'yes',
             'opacity': 1
           });
           s.selector('edge.crimenet-nhop-edge').style({
             'line-color': '#2783DE',
             'target-arrow-color': '#2783DE',
             'width': '3px',
-            'z-index': 9980,
+            'z-index': 99800,
+            'z-index-compare': 'manual',
             'opacity': 1
           });
           s.selector('.crimenet-dimmed').style({
-            'opacity': 0.15
+            'opacity': 0.12,
+            'events': 'no',
+            'text-events': 'no',
+            'z-index': 1,
+            'z-index-compare': 'manual',
+            'z-compound-depth': 'bottom'
+          });
+          s.selector('edge.crimenet-dimmed').style({
+            'opacity': 0.08,
+            'events': 'no',
+            'z-index': 1,
+            'z-index-compare': 'manual'
           });
           if (typeof s.update === 'function') s.update();
         }
@@ -475,7 +531,26 @@ window.UNBOUND = window.UNBOUND || {};
     }
   }
 
+  function bindCytoscapeListeners(cy) {
+    if (!cy || cy._crimenetTapBound) return;
+    try {
+      if (typeof cy.on === 'function') {
+        cy.on('tap', (evt) => {
+          if (evt.target === cy) {
+            clearGraphHighlights();
+          } else if (evt.target && typeof evt.target.isNode === 'function' && evt.target.isNode()) {
+            const nid = evt.target.id();
+            state.selectedNodeId = nid;
+            window.UNBOUND.renderPanel();
+          }
+        });
+        cy._crimenetTapBound = true;
+      }
+    } catch(e) {}
+  }
+
   function clearGraphHighlights() {
+    state.activeFocusState = null;
     try {
       const el = document.getElementById('cytoscape');
       const cy = el && el._cyreg && el._cyreg.cy;
@@ -488,6 +563,68 @@ window.UNBOUND = window.UNBOUND || {};
   }
   window.UNBOUND.clearGraphHighlights = clearGraphHighlights;
 
+  function applyActiveFocusClasses(cy) {
+    if (!state.activeFocusState || !cy) return;
+    try {
+      ensureCyHighlightStyles(cy);
+      const fs = state.activeFocusState;
+      if (fs.type === 'pair') {
+        let a = cy.getElementById(fs.idA);
+        let b = cy.getElementById(fs.idB);
+        if ((!a || a.length === 0) && typeof fs.idA === 'string') {
+          a = cy.nodes().filter(n => n.id() === fs.idA || n.data('name') === fs.idA || n.data('label') === fs.idA);
+        }
+        if ((!b || b.length === 0) && typeof fs.idB === 'string') {
+          b = cy.nodes().filter(n => n.id() === fs.idB || n.data('name') === fs.idB || n.data('label') === fs.idB);
+        }
+        if (a && a.length > 0 && b && b.length > 0) {
+          const nbrsA = a.neighborhood().nodes();
+          const nbrsB = b.neighborhood().nodes();
+          const intermediaries = nbrsA.intersection(nbrsB);
+          let connectingEdges = a.edgesWith(b);
+          if (intermediaries && intermediaries.length > 0) {
+            connectingEdges = connectingEdges.union(a.edgesWith(intermediaries)).union(b.edgesWith(intermediaries));
+          }
+          const focusEles = a.union(b).union(intermediaries).union(connectingEdges);
+          cy.batch(() => {
+            cy.elements().difference(focusEles).addClass('crimenet-dimmed');
+            a.addClass('crimenet-focus-pair');
+            b.addClass('crimenet-focus-pair');
+            if (intermediaries.length > 0) intermediaries.addClass('crimenet-intermediary');
+            if (connectingEdges.length > 0) connectingEdges.addClass('crimenet-focus-edge');
+          });
+        }
+      } else if (fs.type === 'node') {
+        const n = cy.getElementById(fs.id);
+        if (n && n.length > 0) {
+          const neighborhood = n.union(n.neighborhood());
+          cy.batch(() => {
+            cy.elements().difference(neighborhood).addClass('crimenet-dimmed');
+            n.addClass('crimenet-focus-pair');
+            neighborhood.nodes().difference(n).addClass('crimenet-intermediary');
+            neighborhood.edges().addClass('crimenet-focus-edge');
+          });
+        }
+      } else if (fs.type === 'nhop') {
+        const root = cy.getElementById(fs.id);
+        if (root && root.length > 0) {
+          let current = root;
+          for (let h = 0; h < fs.hops; h++) {
+            current = current.union(current.neighborhood());
+          }
+          cy.batch(() => {
+            cy.elements().difference(current).addClass('crimenet-dimmed');
+            current.nodes().addClass('crimenet-nhop-node');
+            current.edges().addClass('crimenet-nhop-edge');
+            root.addClass('crimenet-focus-pair');
+          });
+        }
+      }
+    } catch(e) {
+      console.warn('CrimeNet: error applying active focus classes', e);
+    }
+  }
+
   window.UNBOUND.focusNodeInGraph = function(nodeId) {
     state.selectedNodeId = nodeId;
     try {
@@ -499,6 +636,10 @@ window.UNBOUND = window.UNBOUND || {};
         cy.elements().unselect();
         const n = cy.getElementById(nodeId);
         if (n && n.length > 0) {
+          state.activeFocusState = {
+            type: 'node',
+            id: n.id()
+          };
           const neighborhood = n.union(n.neighborhood());
           cy.batch(() => {
             cy.elements().difference(neighborhood).addClass('crimenet-dimmed');
@@ -508,13 +649,7 @@ window.UNBOUND = window.UNBOUND || {};
           });
           cy.animate({ fit: { eles: neighborhood, padding: 80 } }, { duration: 500 });
           window.UNBOUND.showToast(`Focused on ${formatLabel(state.nodeMap.get(nodeId))} & connections <a href="javascript:void(0)" onclick="window.UNBOUND.clearGraphHighlights()" style="color:#fff;text-decoration:underline;margin-left:6px">[Reset]</a>`, true);
-
-          if (!cy._tapClearBound && typeof cy.on === 'function') {
-            cy.on('tap', (evt) => {
-              if (evt.target === cy) clearGraphHighlights();
-            });
-            cy._tapClearBound = true;
-          }
+          bindCytoscapeListeners(cy);
         }
       }
     } catch (e) { console.warn(e); }
@@ -531,6 +666,11 @@ window.UNBOUND = window.UNBOUND || {};
         cy.elements().unselect();
         const root = cy.getElementById(nodeId);
         if (root && root.length > 0) {
+          state.activeFocusState = {
+            type: 'nhop',
+            id: root.id(),
+            hops: hops
+          };
           let current = root;
           for (let h = 0; h < hops; h++) {
             current = current.union(current.neighborhood());
@@ -544,13 +684,7 @@ window.UNBOUND = window.UNBOUND || {};
           cy.animate({ fit: { eles: current, padding: 60 } }, { duration: 500 });
           const count = current.nodes().length;
           window.UNBOUND.showToast(`Highlighted ${count} entities in ${hops}-hop subgraph of ${formatLabel(state.nodeMap.get(nodeId))} <a href="javascript:void(0)" onclick="window.UNBOUND.clearGraphHighlights()" style="color:#fff;text-decoration:underline;margin-left:6px">[Reset]</a>`, true);
-
-          if (!cy._tapClearBound && typeof cy.on === 'function') {
-            cy.on('tap', (evt) => {
-              if (evt.target === cy) clearGraphHighlights();
-            });
-            cy._tapClearBound = true;
-          }
+          bindCytoscapeListeners(cy);
           return;
         }
       }
@@ -581,6 +715,12 @@ window.UNBOUND = window.UNBOUND || {};
           window.UNBOUND.showToast(`Entities ${idA} or ${idB} not found in active graph.`, false);
           return;
         }
+
+        state.activeFocusState = {
+          type: 'pair',
+          idA: a.id(),
+          idB: b.id()
+        };
 
         // Intermediaries = intersection of neighborhoods of A and B
         const nbrsA = a.neighborhood().nodes();
@@ -619,12 +759,7 @@ window.UNBOUND = window.UNBOUND || {};
           true
         );
 
-        if (!cy._tapClearBound && typeof cy.on === 'function') {
-          cy.on('tap', (evt) => {
-            if (evt.target === cy) clearGraphHighlights();
-          });
-          cy._tapClearBound = true;
-        }
+        bindCytoscapeListeners(cy);
       }
     } catch (e) {
       console.warn('focusPairInGraph error:', e);
@@ -765,6 +900,8 @@ window.UNBOUND = window.UNBOUND || {};
     if (cyElem && cyElem._cyreg && cyElem._cyreg.cy) {
       try {
         const cy = cyElem._cyreg.cy;
+        bindCytoscapeListeners(cy);
+        ensureCyHighlightStyles(cy);
         const cyElements = cy.elements().jsons();
         if (Array.isArray(cyElements) && cyElements.length > 0) {
           state.elements = cyElements;
@@ -775,6 +912,8 @@ window.UNBOUND = window.UNBOUND || {};
     }
     if (window.cy && typeof window.cy.elements === 'function') {
       try {
+        bindCytoscapeListeners(window.cy);
+        ensureCyHighlightStyles(window.cy);
         const cyElements = window.cy.elements().jsons();
         if (Array.isArray(cyElements) && cyElements.length > 0) {
           state.elements = cyElements;
@@ -1172,6 +1311,15 @@ window.UNBOUND = window.UNBOUND || {};
 
     if (tapNodeData && tapNodeData.id) {
       state.selectedNodeId = String(tapNodeData.id);
+    }
+
+    const el = document.getElementById('cytoscape');
+    const cy = el && el._cyreg && el._cyreg.cy;
+    if (cy) {
+      bindCytoscapeListeners(cy);
+      if (state.activeFocusState) {
+        applyActiveFocusClasses(cy);
+      }
     }
 
     window.UNBOUND.renderPanel();
