@@ -127,18 +127,7 @@ def init_layout(style, dataset_list, external_dataset_list= []):
                                    1.00: '1.00',
                                }),
                 ]),
-                 html.Div(id='warning-div', children=[
-                     html.Div(id='unbound-status-bar', children=[
-                         html.Span([html.B('47'), ' entities'], style={'display': 'flex', 'alignItems': 'center', 'gap': '4px'}),
-                         html.Span([html.B('102'), ' relationships'], style={'display': 'flex', 'alignItems': 'center', 'gap': '4px'}),
-                         html.Span([html.B('6'), ' cases'], style={'display': 'flex', 'alignItems': 'center', 'gap': '4px'}),
-                         html.Span([html.B('9'), ' alerts'], style={'display': 'flex', 'alignItems': 'center', 'gap': '4px'}),
-                         html.Span([
-                             html.Span(id='unbound-status-pulse', style={'width': '7px', 'height': '7px', 'borderRadius': '50%', 'background': '#46A171', 'display': 'inline-block', 'marginRight': '5px'}),
-                             'Human-in-the-loop \u00b7 AI leads require investigator verification'
-                         ], style={'marginLeft': 'auto', 'display': 'flex', 'alignItems': 'center', 'fontSize': '11px', 'color': '#7D7A75'})
-                     ])
-                 ]),
+                html.Div(id='warning-div', children=[]),
                 html.Div(id='search-div', children=[
                     dbc.Button(className='interaction-button', id='filter-button', disabled=True)
                 ]),

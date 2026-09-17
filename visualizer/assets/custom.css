@@ -330,6 +330,10 @@ hr {
     z-index: 8;
 }
 
+#warning-div:empty {
+    display: none;
+}
+
 #choose-network {
     margin-bottom: 0;
     width: 100%;
@@ -1124,16 +1128,6 @@ input[type="radio"] {
     box-sizing: border-box;
 }
 
-#unbound-status-bar {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    font-size: 11px;
-    color: #7D7A75;
-    flex-wrap: wrap;
-}
-#unbound-status-bar b { color: #2C2C2B; font-weight: 600; }
-
 .unbound-tab-badge {
     display: inline-flex;
     align-items: center;
@@ -1165,27 +1159,26 @@ input[type="radio"] {
 /* --- CrimeNet Intelligence Subnav & Pills --- */
 .crimenet-intel-subnav {
     display: flex;
-    gap: 3px;
-    overflow-x: auto;
+    flex-wrap: wrap;
+    gap: 4px;
     padding-bottom: 6px;
     margin-bottom: 8px;
     border-bottom: 1px solid #E6E5E3;
 }
-.crimenet-intel-subnav::-webkit-scrollbar { height: 3px; }
-.crimenet-intel-subnav::-webkit-scrollbar-thumb { background: #ccc; border-radius: 2px; }
 
 .intel-nav-pill {
     border: 1px solid #E6E5E3;
     background: #fff;
     border-radius: 4px;
-    padding: 3px 7px;
-    font-size: 10.5px;
-    font-weight: 550;
+    padding: 3px 6px;
+    font-size: 10px;
+    font-weight: 600;
     cursor: pointer;
     white-space: nowrap;
     color: #555;
     transition: all 0.12s;
     font-family: inherit;
+    flex-shrink: 0;
 }
 .intel-nav-pill:hover { background: #F9F8F7; }
 .intel-nav-pill.active {

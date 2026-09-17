@@ -310,5 +310,85 @@
 		"style": {
 			"background-color": "#B32851"
 		}
+	},
+	{
+		"selector": ".crimenet-focus-pair",
+		"style": {
+			"border-width": "4vh",
+			"border-style": "solid",
+			"border-color": "#E56458",
+			"background-color": "#E56458",
+			"color": "#000000",
+			"font-weight": "bold",
+			"font-size": "0.75em",
+			"text-background-color": "#ffffff",
+			"text-background-opacity": "0.9",
+			"text-background-padding": "3px",
+			"width": "34vh",
+			"height": "34vh",
+			"z-index": "9999",
+			"opacity": "1"
+		}
+	},
+	{
+		"selector": ".crimenet-intermediary",
+		"style": {
+			"border-width": "2.5vh",
+			"border-style": "dashed",
+			"border-color": "#F2A93B",
+			"background-color": "#F2A93B",
+			"color": "#000000",
+			"font-weight": "bold",
+			"font-size": "0.65em",
+			"text-background-color": "#ffffff",
+			"text-background-opacity": "0.9",
+			"text-background-padding": "2px",
+			"width": "28vh",
+			"height": "28vh",
+			"z-index": "9990",
+			"opacity": "1"
+		}
+	},
+	{
+		"selector": "edge.crimenet-focus-edge",
+		"style": {
+			"line-color": "#2783DE",
+			"target-arrow-color": "#2783DE",
+			"width": "4px",
+			"line-style": "dashed",
+			"arrow-scale": "1.1",
+			"z-index": "9980",
+			"opacity": "1"
+		}
+	},
+	{
+		"selector": ".crimenet-nhop-node",
+		"style": {
+			"border-width": "3vh",
+			"border-style": "solid",
+			"border-color": "#2783DE",
+			"background-color": "#2783DE",
+			"color": "#000000",
+			"text-background-color": "#ffffff",
+			"text-background-opacity": "0.9",
+			"z-index": "9990",
+			"opacity": "1"
+		}
+	},
+	{
+		"selector": "edge.crimenet-nhop-edge",
+		"style": {
+			"line-color": "#2783DE",
+			"target-arrow-color": "#2783DE",
+			"width": "3px",
+			"z-index": "9980",
+			"opacity": "1"
+		}
+	},
+	{
+		"selector": ".crimenet-dimmed",
+		"style": {
+			"opacity": "0.15"
+		}
 	}
 ]

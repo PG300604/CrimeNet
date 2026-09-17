@@ -396,20 +396,125 @@ window.UNBOUND = window.UNBOUND || {};
   }
 
   /* ------------------------------------------------------------------ */
-  /*  Graph Focus & Cytoscape Actions                                   */
+  /*  Graph Focus, Highlighting & Cytoscape Actions                     */
   /* ------------------------------------------------------------------ */
+  function ensureCyHighlightStyles(cy) {
+    if (!cy || cy._crimenetStylesInjected) return;
+    try {
+      if (typeof cy.style === 'function') {
+        const s = cy.style();
+        if (s && typeof s.selector === 'function') {
+          s.selector('.crimenet-focus-pair').style({
+            'border-width': '4vh',
+            'border-style': 'solid',
+            'border-color': '#E56458',
+            'background-color': '#E56458',
+            'color': '#000000',
+            'font-weight': 'bold',
+            'font-size': '0.75em',
+            'text-background-color': '#ffffff',
+            'text-background-opacity': 0.9,
+            'text-background-padding': '3px',
+            'width': '34vh',
+            'height': '34vh',
+            'z-index': 9999,
+            'opacity': 1
+          });
+          s.selector('.crimenet-intermediary').style({
+            'border-width': '2.5vh',
+            'border-style': 'dashed',
+            'border-color': '#F2A93B',
+            'background-color': '#F2A93B',
+            'color': '#000000',
+            'font-weight': 'bold',
+            'font-size': '0.65em',
+            'text-background-color': '#ffffff',
+            'text-background-opacity': 0.9,
+            'text-background-padding': '2px',
+            'width': '28vh',
+            'height': '28vh',
+            'z-index': 9990,
+            'opacity': 1
+          });
+          s.selector('edge.crimenet-focus-edge').style({
+            'line-color': '#2783DE',
+            'target-arrow-color': '#2783DE',
+            'width': '4px',
+            'line-style': 'dashed',
+            'arrow-scale': 1.1,
+            'z-index': 9980,
+            'opacity': 1
+          });
+          s.selector('.crimenet-nhop-node').style({
+            'border-width': '3vh',
+            'border-style': 'solid',
+            'border-color': '#2783DE',
+            'background-color': '#2783DE',
+            'color': '#000000',
+            'text-background-color': '#ffffff',
+            'text-background-opacity': 0.9,
+            'z-index': 9990,
+            'opacity': 1
+          });
+          s.selector('edge.crimenet-nhop-edge').style({
+            'line-color': '#2783DE',
+            'target-arrow-color': '#2783DE',
+            'width': '3px',
+            'z-index': 9980,
+            'opacity': 1
+          });
+          s.selector('.crimenet-dimmed').style({
+            'opacity': 0.15
+          });
+          if (typeof s.update === 'function') s.update();
+        }
+      }
+      cy._crimenetStylesInjected = true;
+    } catch(e) {
+      console.warn('CrimeNet: could not inject dynamic cy styles', e);
+    }
+  }
+
+  function clearGraphHighlights() {
+    try {
+      const el = document.getElementById('cytoscape');
+      const cy = el && el._cyreg && el._cyreg.cy;
+      if (cy) {
+        cy.batch(() => {
+          cy.elements().removeClass('crimenet-focus-pair crimenet-intermediary crimenet-focus-edge crimenet-nhop-node crimenet-nhop-edge crimenet-dimmed');
+        });
+      }
+    } catch(e) {}
+  }
+  window.UNBOUND.clearGraphHighlights = clearGraphHighlights;
+
   window.UNBOUND.focusNodeInGraph = function(nodeId) {
     state.selectedNodeId = nodeId;
     try {
       const el = document.getElementById('cytoscape');
       const cy = el && el._cyreg && el._cyreg.cy;
       if (cy) {
-        cy.nodes().unselect();
+        ensureCyHighlightStyles(cy);
+        clearGraphHighlights();
+        cy.elements().unselect();
         const n = cy.getElementById(nodeId);
         if (n && n.length > 0) {
-          n.select();
-          cy.animate({ center: { eles: n }, zoom: 1.4 }, { duration: 450 });
-          window.UNBOUND.showToast(`Centered on ${formatLabel(state.nodeMap.get(nodeId))}`, true);
+          const neighborhood = n.union(n.neighborhood());
+          cy.batch(() => {
+            cy.elements().difference(neighborhood).addClass('crimenet-dimmed');
+            n.addClass('crimenet-focus-pair');
+            neighborhood.nodes().difference(n).addClass('crimenet-intermediary');
+            neighborhood.edges().addClass('crimenet-focus-edge');
+          });
+          cy.animate({ fit: { eles: neighborhood, padding: 80 } }, { duration: 500 });
+          window.UNBOUND.showToast(`Focused on ${formatLabel(state.nodeMap.get(nodeId))} & connections <a href="javascript:void(0)" onclick="window.UNBOUND.clearGraphHighlights()" style="color:#fff;text-decoration:underline;margin-left:6px">[Reset]</a>`, true);
+
+          if (!cy._tapClearBound && typeof cy.on === 'function') {
+            cy.on('tap', (evt) => {
+              if (evt.target === cy) clearGraphHighlights();
+            });
+            cy._tapClearBound = true;
+          }
         }
       }
     } catch (e) { console.warn(e); }
@@ -421,6 +526,8 @@ window.UNBOUND = window.UNBOUND || {};
       const el = document.getElementById('cytoscape');
       const cy = el && el._cyreg && el._cyreg.cy;
       if (cy) {
+        ensureCyHighlightStyles(cy);
+        clearGraphHighlights();
         cy.elements().unselect();
         const root = cy.getElementById(nodeId);
         if (root && root.length > 0) {
@@ -428,9 +535,22 @@ window.UNBOUND = window.UNBOUND || {};
           for (let h = 0; h < hops; h++) {
             current = current.union(current.neighborhood());
           }
-          current.select();
-          cy.animate({ fit: { eles: current, padding: 50 } }, { duration: 500 });
-          window.UNBOUND.showToast(`Highlighted ${current.nodes().length} entities in ${hops}-hop neighborhood`, true);
+          cy.batch(() => {
+            cy.elements().difference(current).addClass('crimenet-dimmed');
+            current.nodes().addClass('crimenet-nhop-node');
+            current.edges().addClass('crimenet-nhop-edge');
+            root.addClass('crimenet-focus-pair');
+          });
+          cy.animate({ fit: { eles: current, padding: 60 } }, { duration: 500 });
+          const count = current.nodes().length;
+          window.UNBOUND.showToast(`Highlighted ${count} entities in ${hops}-hop subgraph of ${formatLabel(state.nodeMap.get(nodeId))} <a href="javascript:void(0)" onclick="window.UNBOUND.clearGraphHighlights()" style="color:#fff;text-decoration:underline;margin-left:6px">[Reset]</a>`, true);
+
+          if (!cy._tapClearBound && typeof cy.on === 'function') {
+            cy.on('tap', (evt) => {
+              if (evt.target === cy) clearGraphHighlights();
+            });
+            cy._tapClearBound = true;
+          }
           return;
         }
       }
@@ -443,17 +563,80 @@ window.UNBOUND = window.UNBOUND || {};
       const el = document.getElementById('cytoscape');
       const cy = el && el._cyreg && el._cyreg.cy;
       if (cy) {
+        ensureCyHighlightStyles(cy);
+        clearGraphHighlights();
         cy.elements().unselect();
-        const a = cy.getElementById(idA);
-        const b = cy.getElementById(idB);
-        const pair = a.union(b);
-        if (pair.length > 0) {
-          pair.select();
-          cy.animate({ fit: { eles: pair, padding: 70 } }, { duration: 450 });
-          window.UNBOUND.showToast(`Focused pair: ${formatLabel(state.nodeMap.get(idA))} \u2194 ${formatLabel(state.nodeMap.get(idB))}`, true);
+
+        let a = cy.getElementById(idA);
+        let b = cy.getElementById(idB);
+
+        if ((!a || a.length === 0) && typeof idA === 'string') {
+          a = cy.nodes().filter(n => n.id() === idA || n.data('name') === idA || n.data('label') === idA);
+        }
+        if ((!b || b.length === 0) && typeof idB === 'string') {
+          b = cy.nodes().filter(n => n.id() === idB || n.data('name') === idB || n.data('label') === idB);
+        }
+
+        if (!a || a.length === 0 || !b || b.length === 0) {
+          window.UNBOUND.showToast(`Entities ${idA} or ${idB} not found in active graph.`, false);
+          return;
+        }
+
+        // Intermediaries = intersection of neighborhoods of A and B
+        const nbrsA = a.neighborhood().nodes();
+        const nbrsB = b.neighborhood().nodes();
+        const intermediaries = nbrsA.intersection(nbrsB);
+
+        // Connecting edges
+        let connectingEdges = a.edgesWith(b);
+        if (intermediaries && intermediaries.length > 0) {
+          const edgesA = a.edgesWith(intermediaries);
+          const edgesB = b.edgesWith(intermediaries);
+          connectingEdges = connectingEdges.union(edgesA).union(edgesB);
+        }
+
+        const focusEles = a.union(b).union(intermediaries).union(connectingEdges);
+
+        cy.batch(() => {
+          cy.elements().difference(focusEles).addClass('crimenet-dimmed');
+          a.addClass('crimenet-focus-pair');
+          b.addClass('crimenet-focus-pair');
+          if (intermediaries.length > 0) {
+            intermediaries.addClass('crimenet-intermediary');
+          }
+          if (connectingEdges.length > 0) {
+            connectingEdges.addClass('crimenet-focus-edge');
+          }
+        });
+
+        cy.animate({ fit: { eles: focusEles, padding: 80 } }, { duration: 550 });
+
+        const nameA = formatLabel(state.nodeMap.get(idA)) || a.data('label') || idA;
+        const nameB = formatLabel(state.nodeMap.get(idB)) || b.data('label') || idB;
+        const count = intermediaries.length;
+        window.UNBOUND.showToast(
+          `Highlighted Lead Pair: ${nameA} \u2194 ${nameB} (${count} shared connector${count !== 1 ? 's' : ''}) <a href="javascript:void(0)" onclick="window.UNBOUND.clearGraphHighlights()" style="color:#fff;text-decoration:underline;margin-left:6px">[Reset]</a>`,
+          true
+        );
+
+        if (!cy._tapClearBound && typeof cy.on === 'function') {
+          cy.on('tap', (evt) => {
+            if (evt.target === cy) clearGraphHighlights();
+          });
+          cy._tapClearBound = true;
         }
       }
-    } catch (e) { console.warn(e); }
+    } catch (e) {
+      console.warn('focusPairInGraph error:', e);
+    }
+  };
+
+  window.UNBOUND.focusPairByIndex = function(idx) {
+    const list = state.lastHiddenLinks || [];
+    const p = list[idx];
+    if (p && p.nodeA && p.nodeB) {
+      window.UNBOUND.focusPairInGraph(p.nodeA.id, p.nodeB.id);
+    }
   };
 
   window.UNBOUND.acceptLead = function(pairKey) {
@@ -462,10 +645,22 @@ window.UNBOUND = window.UNBOUND || {};
     window.UNBOUND.renderPanel();
   };
 
+  window.UNBOUND.acceptLeadByIndex = function(idx) {
+    const list = state.lastHiddenLinks || [];
+    const p = list[idx];
+    if (p) window.UNBOUND.acceptLead(p.pairKey);
+  };
+
   window.UNBOUND.dismissLead = function(pairKey) {
     state.dismissedLeads.add(pairKey);
     window.UNBOUND.showToast(`Lead dismissed`);
     window.UNBOUND.renderPanel();
+  };
+
+  window.UNBOUND.dismissLeadByIndex = function(idx) {
+    const list = state.lastHiddenLinks || [];
+    const p = list[idx];
+    if (p) window.UNBOUND.dismissLead(p.pairKey);
   };
 
   window.UNBOUND.showToast = function(msg, ok) {
@@ -635,27 +830,7 @@ window.UNBOUND = window.UNBOUND || {};
       return true;
     });
 
-    // Update bottom status bar dynamically
-    const statusBar = document.getElementById('unbound-status-bar');
-    if (statusBar) {
-      const casesSet = new Set();
-      state.nodes.forEach(n => {
-        if (n.type === 'case') casesSet.add(n.id);
-        if (n.properties && n.properties.cases) {
-          (Array.isArray(n.properties.cases) ? n.properties.cases : [n.properties.cases]).forEach(c => casesSet.add(c));
-        }
-      });
-      statusBar.innerHTML = `
-        <span style="display:flex;align-items:center;gap:4px"><b>${state.nodes.length}</b> entities</span>
-        <span style="display:flex;align-items:center;gap:4px"><b>${state.edges.length}</b> relationships</span>
-        <span style="display:flex;align-items:center;gap:4px"><b>${casesSet.size}</b> cases</span>
-        <span style="display:flex;align-items:center;gap:4px"><b>${anomalies.length}</b> alerts</span>
-        <span style="margin-left:auto;display:flex;align-items:center;font-size:11px;color:#7D7A75">
-          <span id="unbound-status-pulse" style="width:7px;height:7px;border-radius:50%;background:#46A171;display:inline-block;margin-right:5px"></span>
-          Human-in-the-loop \u00b7 AI leads require investigator verification
-        </span>
-      `;
-    }
+    state.lastHiddenLinks = hiddenLinks;
 
     // Header & Subnav
     let html = `
@@ -769,24 +944,24 @@ window.UNBOUND = window.UNBOUND || {};
           <div style="padding:16px;text-align:center;color:#999;font-size:11px">No hidden link anomalies found in current network.</div>
         ` : `
           <div class="unbound-card">
-            ${hiddenLinks.map(p => `
+            ${hiddenLinks.map((p, idx) => `
               <div class="unbound-item">
                 <div class="unbound-t">
-                  <a href="javascript:void(0)" onclick="window.UNBOUND.focusNodeInGraph('${p.nodeA.id}')" style="color:#2783DE;font-weight:600">${formatLabel(p.nodeA)}</a>
+                  <a href="javascript:void(0)" onclick="window.UNBOUND.focusNodeInGraph(decodeURIComponent('${encodeURIComponent(p.nodeA.id)}'))" style="color:#2783DE;font-weight:600">${formatLabel(p.nodeA)}</a>
                   <span style="color:#999">\u2194</span>
-                  <a href="javascript:void(0)" onclick="window.UNBOUND.focusNodeInGraph('${p.nodeB.id}')" style="color:#2783DE;font-weight:600">${formatLabel(p.nodeB)}</a>
+                  <a href="javascript:void(0)" onclick="window.UNBOUND.focusNodeInGraph(decodeURIComponent('${encodeURIComponent(p.nodeB.id)}'))" style="color:#2783DE;font-weight:600">${formatLabel(p.nodeB)}</a>
                   ${badge(p.score + '% Lead', p.score > 70 ? 'badge-orange' : '')}
                 </div>
                 <div class="unbound-why">
                   No direct link observed. <b>${p.shared.length} shared connection(s)</b> via ${p.shared.map(formatLabel).join(', ')}.
                 </div>
                 <div class="unbound-row-actions">
-                  <button class="unbound-mini-btn" onclick="window.UNBOUND.focusPairInGraph('${p.nodeA.id}', '${p.nodeB.id}')">Focus Pair</button>
+                  <button class="unbound-mini-btn" onclick="window.UNBOUND.focusPairByIndex(${idx})">Focus Pair</button>
                   ${p.accepted ? `
                     <span class="unbound-badge badge-green">\u2713 Accepted</span>
                   ` : `
-                    <button class="unbound-mini-btn" style="color:#46A171" onclick="window.UNBOUND.acceptLead('${p.pairKey}')">Accept Lead</button>
-                    <button class="unbound-mini-btn" style="color:#999" onclick="window.UNBOUND.dismissLead('${p.pairKey}')">Dismiss</button>
+                    <button class="unbound-mini-btn" style="color:#46A171" onclick="window.UNBOUND.acceptLeadByIndex(${idx})">Accept Lead</button>
+                    <button class="unbound-mini-btn" style="color:#999" onclick="window.UNBOUND.dismissLeadByIndex(${idx})">Dismiss</button>
                   `}
                 </div>
               </div>
@@ -819,8 +994,8 @@ window.UNBOUND = window.UNBOUND || {};
                   <b style="color:#2C2C2B">${a.subject}</b> \u2014 ${a.why}
                 </div>
                 <div class="unbound-row-actions">
-                  <button class="unbound-mini-btn" onclick="window.UNBOUND.focusNodeInGraph('${a.nodeId}')">Focus in Graph</button>
-                  <button class="unbound-mini-btn" onclick="window.UNBOUND.exploreNHopForNode('${a.nodeId}')">Explore N-Hop</button>
+                  <button class="unbound-mini-btn" onclick="window.UNBOUND.focusNodeInGraph(decodeURIComponent('${encodeURIComponent(a.nodeId)}'))">Focus in Graph</button>
+                  <button class="unbound-mini-btn" onclick="window.UNBOUND.exploreNHopForNode(decodeURIComponent('${encodeURIComponent(a.nodeId)}'))">Explore N-Hop</button>
                 </div>
               </div>
             `).join('')}
@@ -834,8 +1009,13 @@ window.UNBOUND = window.UNBOUND || {};
     /* -------------------------------------------------- */
     else if (state.activeTab === 'nhop') {
       const selectedNode = state.nodeMap.get(state.selectedNodeId) || state.nodes[0];
-      const nhopResult = selectedNode ? getNHopNeighborhood(selectedNode.id, state.nHopDistance) : { nodesByHop: [], allNodeIds: new Set() };
-      const directEdges = selectedNode ? (state.adj.get(selectedNode.id) || []) : [];
+      if (!selectedNode) {
+        html += `<div style="padding:20px;text-align:center;color:#999;font-size:11px">No entities available in graph.</div>`;
+        panel.innerHTML = html;
+        return;
+      }
+      const nhopResult = getNHopNeighborhood(selectedNode.id, state.nHopDistance);
+      const directEdges = state.adj.get(selectedNode.id) || [];
 
       html += `
         <div class="unbound-sect-h">N-Hop Exploration</div>
@@ -863,10 +1043,10 @@ window.UNBOUND = window.UNBOUND || {};
           </div>
 
           <div style="display:flex;gap:4px">
-            <button class="unbound-btn-primary" onclick="window.UNBOUND.highlightNHopInGraph('${selectedNode.id}', ${state.nHopDistance})">
+            <button class="unbound-btn-primary" onclick="window.UNBOUND.highlightNHopInGraph(decodeURIComponent('${encodeURIComponent(selectedNode.id)}'), ${state.nHopDistance})">
               \uD83D\uDD0E Highlight N-Hop Subgraph
             </button>
-            <button class="unbound-btn" onclick="window.UNBOUND.focusNodeInGraph('${selectedNode.id}')">
+            <button class="unbound-btn" onclick="window.UNBOUND.focusNodeInGraph(decodeURIComponent('${encodeURIComponent(selectedNode.id)}'))">
               \uD83C\uDFAF Center
             </button>
           </div>
@@ -1028,5 +1208,13 @@ window.UNBOUND = window.UNBOUND || {};
       }
     }
   }, 1200);
+
+  // Clear graph highlights when toolbar actions occur
+  document.addEventListener('click', (e) => {
+    const t = e.target;
+    if (t && (t.id === 'isolate-button' || t.id === 'show-all-button' || (t.closest && t.closest('#isolate-button, #show-all-button')))) {
+      clearGraphHighlights();
+    }
+  });
 
 })();
