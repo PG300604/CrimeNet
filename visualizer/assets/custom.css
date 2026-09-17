@@ -2,21 +2,27 @@
     display: flex;
     flex-direction: column;
     width: 76%;
+    height: 100vh;
     position: relative;
+    overflow: hidden;
+    background-color: #ffffff;
 }
 
 #sidebar {
-    border: 1.5px black solid;
-    height: 98vh;
+    border-left: 1px solid #d0d7de;
+    border-top: none;
+    border-bottom: none;
+    border-right: none;
+    height: 100vh;
     overflow-y: auto;
     overflow-x: hidden;
     position: fixed;
     display: flex;
     flex-direction: column;
-    right: 0.8vh;
-    margin-left: 1%;
-    width: 23%;
-    background-color: #f9f9f9;
+    right: 0;
+    top: 0;
+    width: 24%;
+    background-color: #fafbfc;
     z-index: 8;
     box-sizing: border-box;
 }
@@ -86,17 +92,71 @@
 .inputs {
     margin-bottom: 6px;
     width: 100%;
-    background-color: white;
 }
 
 a.inputs {
     display: block;
     text-decoration: none;
     color: inherit;
+    margin-bottom: 6px;
 }
 
 a.inputs > button {
     pointer-events: none;
+}
+
+.input-div button,
+.input-div .button,
+button.inputs,
+.inputs > button {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    height: 36px;
+    line-height: 34px;
+    padding: 0 12px;
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: #333333;
+    background-color: #ffffff;
+    border: 1px solid #d0d7de;
+    border-radius: 6px;
+    cursor: pointer;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+    transition: all 0.15s ease;
+    box-sizing: border-box;
+    margin-bottom: 6px;
+}
+
+.input-div button:hover,
+button.inputs:hover,
+.inputs > button:hover {
+    background-color: #f6f8fa;
+    border-color: #2783DE;
+    color: #2783DE;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.08);
+}
+
+.input-div button:active,
+button.inputs:active,
+.inputs > button:active {
+    background-color: #ebf0f5;
+    box-shadow: none;
+}
+
+#load-network-button {
+    background-color: #2783DE !important;
+    border-color: #1f70c2 !important;
+    color: #ffffff !important;
+}
+
+#load-network-button:hover {
+    background-color: #1f70c2 !important;
+    border-color: #185da3 !important;
+    color: #ffffff !important;
 }
 
 #title {
@@ -183,6 +243,18 @@ hr {
     box-sizing: border-box;
     min-height: 72px;
     overflow: hidden;
+}
+
+#network-info:empty {
+    display: none;
+}
+
+#info-table-div:not(:has(td)) {
+    display: none;
+}
+
+#info-wrapper:not(:has(td)):not(:has(#network-info table)) {
+    display: none;
 }
 
 #network-info table {
@@ -306,29 +378,32 @@ hr {
 }
 
 #info-wrapper {
-    padding: 8px 8px 4px 8px;
+    padding: 8px 10px;
     display: flex;
     flex-direction: column;
-    gap: 8px;
+    gap: 6px;
     flex-shrink: 0;
     margin-top: auto;
-    border-top: 1.5px solid #e0e0e0;
-    background-color: #f9f9f9;
+    border-top: 1px solid #e1e4e8;
+    background-color: #fafbfc;
     box-sizing: border-box;
 }
 
 #warning-div {
-    border: 1.5px black solid;
-    width: 74.5%;
+    border: 1px solid #d0d7de;
+    border-radius: 6px;
+    width: auto;
+    max-width: 55%;
     position: absolute;
-    bottom: 1vh;
-    height: 4.55vh;
-    float: right;
-    background-color: #f9f9f9;
-    padding-left: 10px;
-    line-height: 4.55vh;
-    text-transform: uppercase;
-    z-index: 8;
+    bottom: 14px;
+    left: 14px;
+    background-color: #ffffff;
+    padding: 6px 14px;
+    font-size: 11px;
+    font-weight: 600;
+    color: #b45309;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+    z-index: 15;
 }
 
 #warning-div:empty {
@@ -348,61 +423,109 @@ hr {
 
 #interaction-div {
     position: absolute;
-    bottom: 7vh;
-    right: 24.1%;
-    width: 13vh;
-    max-height: 88vh;
+    top: 54px;
+    right: 14px;
+    width: 124px;
+    max-height: calc(100vh - 120px);
     overflow-y: auto;
     overflow-x: hidden;
-    z-index: 10;
+    z-index: 20;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    padding: 6px;
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(8px);
+    border: 1px solid #d0d7de;
+    border-radius: 8px;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+    box-sizing: border-box;
 }
 
-.node-buttons {
-    white-space: normal;
-    height: 13vh;
+.interaction-button, .node-buttons {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 30px;
     width: 100%;
-    line-height: 1.2;
+    line-height: 28px;
     text-align: center;
-    padding: 0;
-    border: 1.5px #009900 solid;
-    background-color: #f9f9f9;
-    font-size: 1.5vh;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    padding: 0 6px;
+    border: 1px solid #d0d7de;
+    border-radius: 5px;
+    background-color: #ffffff;
+    color: #333333;
+    font-size: 10px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.02em;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    box-sizing: border-box;
+    margin-bottom: 0;
 }
 
-.interaction-button {
-    height: 6.5vh;
-    width: 100%;
-    line-height: 1.2;
-    text-align: center;
-    white-space: normal;
-    padding: 5px;
-    border: 1.5px #99004d solid;
-    background-color: #f9f9f9;
-    margin-bottom: 0.7vh;
-    font-size: 1.5vh;
-    z-index: 10;
+.interaction-button:hover, .node-buttons:hover {
+    background-color: #f2f6fa;
+    border-color: #2783DE;
+    color: #2783DE;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.06);
+}
+
+.interaction-button:active, .node-buttons:active {
+    background-color: #e5edf5;
+    box-shadow: none;
+}
+
+#open-edit-element, #open-add-element, #open-delete-element, #open-merge-element {
+    border-color: #f3d1e3;
+    color: #9d174d;
+    background-color: #fdf2f8;
+}
+
+#open-edit-element:hover, #open-add-element:hover, #open-delete-element:hover, #open-merge-element:hover {
+    background-color: #fce7f3;
+    border-color: #be185d;
+    color: #be185d;
+}
+
+#exclude-button {
+    border-color: #fed7aa;
+    color: #c2410c;
+    background-color: #fff7ed;
+}
+
+#exclude-button:hover {
+    background-color: #ffedd5;
+    border-color: #ea580c;
+    color: #ea580c;
 }
 
 #isolate-button {
-    border: 1.8px #0077b6 solid;
-    color: #0077b6;
-    font-weight: bold;
+    border-color: #bae6fd;
+    color: #0284c7;
     background-color: #f0f9ff;
 }
 
 #isolate-button:hover {
-    background-color: #bae6fd;
+    background-color: #e0f2fe;
+    border-color: #0284c7;
+    color: #0284c7;
 }
 
-#show-all-button {
-    border: 1.8px #2b7a4b solid;
-    color: #2b7a4b;
-    font-weight: bold;
+#show-all-button, #expand-all-button, #expand-button {
+    border-color: #bbf7d0;
+    color: #15803d;
     background-color: #f0fdf4;
 }
 
-#show-all-button:hover {
-    background-color: #bbf7d0;
+#show-all-button:hover, #expand-all-button:hover, #expand-button:hover {
+    background-color: #dcfce7;
+    border-color: #16a34a;
+    color: #16a34a;
 }
 
 .highlight-hide-button {
@@ -608,18 +731,25 @@ body.modal-open {
 }
 
 .element-interaction-div {
-    font-size: 70%;
-    border: 1.5px #4d0099 solid;
-    border-radius: 4px;
-    padding: 0 3px 5px 3px;
-    background-color: #f9f9f9;
-    margin-top: 2%;
+    font-size: 11px;
+    border: 1px solid #d0d7de;
+    border-radius: 6px;
+    padding: 6px 8px;
+    background-color: #ffffff;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+    margin-top: 6px;
 }
 
 #element-interaction-container {
     position: absolute;
-    bottom: 7%;
-    z-index: 10;
+    bottom: 24px;
+    left: 14px;
+    z-index: 15;
+    max-height: 65vh;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
 }
 
 #label-interaction-div {
@@ -706,36 +836,50 @@ body.modal-open {
 .search-criteria-wrapper {
 }
 
+#search-div {
+    right: 14px;
+    position: absolute;
+    top: 14px;
+    z-index: 20;
+}
+
 #filter-button {
     background-image: url('search.svg');
-    background-size: 70%;
-    background-position: center center;
+    background-size: 14px;
+    background-position: 10px center;
     background-repeat: no-repeat;
     cursor: pointer;
-    top: 1%;
-    width: 13vh;
-    height: 13vh;
-    border-color: black;
-    border-width: 1px;
+    width: 124px;
+    height: 34px;
+    line-height: 32px;
+    padding-left: 30px;
+    border: 1px solid #d0d7de;
+    border-radius: 6px;
+    background-color: #ffffff;
+    font-size: 10.5px;
+    font-weight: 600;
+    color: #333333;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.06);
+    transition: all 0.15s ease;
+    text-align: left;
+    box-sizing: border-box;
 }
 
 #filter-button:hover {
-    background-size: 82%;
-    cursor: pointer;
+    background-color: #f4f8fb;
+    border-color: #2783DE;
+    color: #2783DE;
+    box-shadow: 0 3px 8px rgba(0, 0, 0, 0.09);
 }
 
 #filter-button:disabled {
-    background-color: #cccccc;
-    color: #666666;
-    background-size: 70%;
+    background-color: #f0f0f0;
+    color: #999999;
+    border-color: #e0e0e0;
     cursor: not-allowed;
-}
-
-#search-div {
-    right: 24.1%;
-    position: absolute;
-    top: 1%;
-    z-index: 10;
+    box-shadow: none;
 }
 
 input[type="radio"] {
@@ -762,9 +906,21 @@ input[type="radio"] {
 
 #unaltered-collapse-button {
     position: absolute;
-    width: 12vh;
-    height: 8vh;
+    top: 14px;
+    left: 14px;
+    width: 130px;
+    height: 34px;
+    line-height: 32px;
+    white-space: nowrap;
+    text-transform: uppercase;
+    font-size: 10px;
+    font-weight: 600;
     z-index: 999;
+    border-radius: 6px;
+    border: 1px solid #d0d7de;
+    background-color: #ffffff;
+    color: #333333;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.06);
 }
 
 .single-modal-button {
@@ -777,26 +933,29 @@ input[type="radio"] {
 }
 
 #documentation-button {
-    margin: 4px 8px 8px 8px;
-    width: calc(100% - 16px);
+    margin: 6px 10px 10px 10px;
+    width: calc(100% - 20px);
     box-sizing: border-box;
-    border: 1px #98dcfa solid;
+    border: 1px #b8daf8 solid;
     background: #ffffff url('external-link.png') no-repeat 14px center;
-    background-size: 16px;
+    background-size: 14px;
     font-size: 11px;
     font-weight: 600;
-    padding: 7px 12px 7px 36px;
-    border-radius: 4px;
+    padding: 8px 12px 8px 36px;
+    border-radius: 6px;
     cursor: pointer;
     text-align: center;
     color: #0b72b9;
     flex-shrink: 0;
     transition: all 0.15s ease;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
 }
 
 #documentation-button:hover {
-    border: 1.5px #4fc3f7 solid;
-    background-color: #f4fbfe;
+    border-color: #2783DE;
+    background-color: #f0f7ff;
+    color: #1e6bb8;
 }
 
 

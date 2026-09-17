@@ -21,7 +21,7 @@ def init_layout(style, dataset_list, external_dataset_list= []):
         html.Div(children=[
             html.Div(className='nine columns', id='main', children=[
                 html.Div(id="original_network_button_div", hidden=True, children=[
-                    dbc.Button('open \n original \n network',
+                    dbc.Button('Original Network',
                                id='unaltered-collapse-button',
                                className="interaction-button"
                                )
@@ -102,7 +102,7 @@ def init_layout(style, dataset_list, external_dataset_list= []):
                 ]),
                 html.Div(id='warning-div', children=[]),
                 html.Div(id='search-div', children=[
-                    dbc.Button(className='interaction-button', id='filter-button', disabled=False)
+                    dbc.Button('Search', className='interaction-button', id='filter-button', disabled=False)
                 ]),
                 dbc.Tooltip(
                     "Search and filter network elements",
@@ -111,15 +111,15 @@ def init_layout(style, dataset_list, external_dataset_list= []):
                 ),
                 html.Div(id='interaction-div', children=[
                     dbc.Button('Test Button', className='interaction-button', id='test-button', style={'display': 'none'}),
-                    dbc.Button('Edit\nElement', className='interaction-button', id='open-edit-element'),
-                    dbc.Button('Add\nElement', className='interaction-button', id='open-add-element'),
-                    dbc.Button('Delete\nElements', className='interaction-button', id='open-delete-element'),
-                    dbc.Button('Merge\nElements', className='interaction-button', id='open-merge-element'),
-                    dbc.Button('Exclude\nElements', className='interaction-button', id='exclude-button'),
+                    dbc.Button('Edit Element', className='interaction-button', id='open-edit-element'),
+                    dbc.Button('Add Element', className='interaction-button', id='open-add-element'),
+                    dbc.Button('Delete Elements', className='interaction-button', id='open-delete-element'),
+                    dbc.Button('Merge Elements', className='interaction-button', id='open-merge-element'),
+                    dbc.Button('Exclude Elements', className='interaction-button', id='exclude-button'),
                     dbc.Button('Clear View', className='interaction-button', id='isolate-button'),
-                    dbc.Button('Show All\nNodes', className='interaction-button', id='show-all-button'),
-                    dbc.Button('Expand \n All Nodes', className='interaction-button', id='expand-all-button'),
-                    dbc.Button('Expand\nNode(s)', className='node-buttons', id='expand-button')
+                    dbc.Button('Show All Nodes', className='interaction-button', id='show-all-button'),
+                    dbc.Button('Expand All Nodes', className='interaction-button', id='expand-all-button'),
+                    dbc.Button('Expand Node(s)', className='node-buttons', id='expand-button')
                 ])
             ]),
             html.Div(className='three columns', id='sidebar', children=[
