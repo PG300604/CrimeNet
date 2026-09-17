@@ -21,7 +21,7 @@ def init_layout(style, dataset_list, external_dataset_list= []):
         html.Div(children=[
             html.Div(className='nine columns', id='main', children=[
                 html.Div(id="original_network_button_div", hidden=True, children=[
-                    dbc.Button('Original Network',
+                    dbc.Button('Open Original Network',
                                id='unaltered-collapse-button',
                                className="interaction-button"
                                )

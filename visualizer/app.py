@@ -171,7 +171,7 @@ def main_callback(*args):
                 text = "Opened original network frame."
                 visualizer_app.logger.info(text)
                 message = dash_formatter.dash_message(text, success=True)
-                return output(cytoscape_class='five columns cytoscape-small', collapse_button_text="close \n original \n network",
+                return output(cytoscape_class='five columns cytoscape-small', collapse_button_text="Close Original Network",
                               hide_interaction_checkboxes=True, hide_prob_slider=True, message=message)
             else:  # close
                 hide_prob_slider = True
@@ -182,7 +182,7 @@ def main_callback(*args):
                 text = "Closed original network frame."
                 visualizer_app.logger.info(text)
                 message = dash_formatter.dash_message(text, success=True)
-                return output(cytoscape_class='six columns cytoscape', collapse_button_text="open \n original \n network",
+                return output(cytoscape_class='six columns cytoscape', collapse_button_text="Open Original Network",
                              hide_interaction_checkboxes=False, hide_prob_slider=hide_prob_slider, message=message)
         except Exception:
             text = "An error occurred while trying to open original network frame."
