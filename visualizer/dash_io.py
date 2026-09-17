@@ -63,6 +63,7 @@ outputs = [
     ## ADVANCED SEARCH ##
     Output('modal-search', 'is_open'),
     Output('filter-container', 'children'),
+    Output('search-quick-input', 'value'),
     # It was tried intensively to solve the below dynamically but it seems like this
     # cannot be done beautifully with the current version of Dash
     Output('search-value-dropdown-0', 'options'),
@@ -189,7 +190,8 @@ inputs = [
     Input({'type': 'search-property-dropdown', 'id': ALL}, 'value'),
     Input({'type': 'remove-search-field', 'id': ALL}, 'n_clicks'),
     Input('add-search-property-button', 'n_clicks'),
-    Input('apply-edit-button', 'n_clicks'),
+    Input('apply-filter-button', 'n_clicks'),
+    Input('reset-filter-button', 'n_clicks'),
 
     ## EDIT DIALOG ##
     Input('apply-edit-button', 'n_clicks'),
@@ -241,6 +243,18 @@ states = [
 
     ## SEARCH DIALOG ##
     State('filter-container', 'children'),
+    State('search-quick-input', 'value'),
+    State('search-value-dropdown-0', 'value'),
+    State('search-value-dropdown-1', 'value'),
+    State('search-value-dropdown-2', 'value'),
+    State('search-value-dropdown-3', 'value'),
+    State('search-value-dropdown-4', 'value'),
+    State('search-value-dropdown-5', 'value'),
+    State('search-value-dropdown-6', 'value'),
+    State('search-value-dropdown-7', 'value'),
+    State('search-value-dropdown-8', 'value'),
+    State('search-value-dropdown-9', 'value'),
+    State({'type': 'and-or-radio', 'id': ALL}, 'value'),
 
     ## EDIT DIALOG ##
     State('edit-element-type', 'value'),
@@ -318,7 +332,8 @@ input_names = [
     'search_property_dropdown_input',
     'remove_search_field_clicks',
     'add_search_property_clicks',
-    'apply_edit_button_clicks',
+    'apply_filter_button_clicks',
+    'reset_filter_button_clicks',
 
     ## 'EDIT' 'DIALOG' ##
     'apply_edit_clicks', 'add_edit_property_clicks',
@@ -359,6 +374,18 @@ input_names = [
 
     ## 'SEARCH' 'DIALOG' ##
     'filter_container',
+    'search_quick_input',
+    'search_value_0',
+    'search_value_1',
+    'search_value_2',
+    'search_value_3',
+    'search_value_4',
+    'search_value_5',
+    'search_value_6',
+    'search_value_7',
+    'search_value_8',
+    'search_value_9',
+    'and_or_radios',
 
 
     ## 'EDIT' 'DIALOG' ##
@@ -447,6 +474,7 @@ def output(
         ## SEARCH DIALOG ##
         show_search_dialog=dash.no_update,
         filter_container=dash.no_update,
+        search_quick_input=dash.no_update,
         search_value_options_0=dash.no_update,
         search_value_options_1=dash.no_update,
         search_value_options_2=dash.no_update,

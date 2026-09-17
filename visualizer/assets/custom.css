@@ -707,9 +707,10 @@ body.modal-open {
 
 #filter-button {
     background-image: url('search.svg');
-    background-size: 90%;
+    background-size: 70%;
     background-position: center center;
     background-repeat: no-repeat;
+    cursor: pointer;
     top: 1%;
     width: 13vh;
     height: 13vh;
@@ -718,13 +719,14 @@ body.modal-open {
 }
 
 #filter-button:hover {
-    background-size: 110%;
+    background-size: 82%;
+    cursor: pointer;
 }
 
 #filter-button:disabled {
     background-color: #cccccc;
     color: #666666;
-    background-size: 110%;
+    background-size: 70%;
     cursor: not-allowed;
 }
 

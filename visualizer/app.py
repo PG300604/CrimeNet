@@ -35,6 +35,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 import argparse
 import os
 import sys
+import json
 import flask
 import dash
 import dash_cytoscape as cyto
@@ -305,20 +306,57 @@ def main_callback(*args):
     ### ADVANCED SEARCH BUTTON ### #
     # When 'Advanced Search' button is pressed: Open Advanced Search Modal.
     elif context.triggered[0]['prop_id'].split('.')[0] == 'filter-button':
-        if not callback_kwargs['network_selection']:
-            return output(
-                message=dash_formatter.dash_message("Select a network to search first.", success=False)
-            )
-        nodes = builtin_datasets.search_nodes(node_ids=None, network=callback_kwargs['network_selection'])['found']
+        if not active_network or not active_network.elements:
+            if not callback_kwargs.get('network_selection'):
+                return output(
+                    message=dash_formatter.dash_message("Please load a network first to search and filter.", success=False)
+                )
+
         network_properties = {}
-        for node in nodes:
-            for key in node['properties']:
-                if key not in network_properties:
-                    network_properties[key] = set()
-                network_properties[key].add(node['properties'][key])
-        property_options = dash_formatter.dash_type_options([*network_properties])
+        # Collect properties from active_network
+        if active_network and getattr(active_network, 'nodes', None):
+            for node_id, props in active_network.nodes.items():
+                if isinstance(props, dict):
+                    for key, val in props.items():
+                        if key not in network_properties:
+                            network_properties[key] = set()
+                        if val is not None and str(val).strip():
+                            network_properties[key].add(str(val))
+        if active_network and active_network.elements:
+            for e in active_network.elements:
+                if e.get('group') == 'nodes':
+                    info = e.get('data', {}).get('info', {})
+                    if isinstance(info, dict):
+                        for key, val in info.items():
+                            if key not in network_properties:
+                                network_properties[key] = set()
+                            if val is not None and str(val).strip():
+                                network_properties[key].add(str(val))
+                    for k in ['id', 'label', 'type']:
+                        v = e.get('data', {}).get(k)
+                        if v and str(v).strip():
+                            if k not in network_properties:
+                                network_properties[k] = set()
+                            network_properties[k].add(str(v))
+        elif callback_kwargs.get('network_selection'):
+            nodes = builtin_datasets.search_nodes(node_ids=None, network=callback_kwargs['network_selection'])['found']
+            for node in nodes:
+                for key in node.get('properties', {}):
+                    if key not in network_properties:
+                        network_properties[key] = set()
+                    val = node['properties'][key]
+                    if val is not None and str(val).strip():
+                        network_properties[key].add(str(val))
+
+        if not network_properties:
+            return output(
+                message=dash_formatter.dash_message("No searchable properties found in the current network.", success=False)
+            )
+
+        property_options = dash_formatter.dash_type_options(sorted(list(network_properties.keys())))
         filter_container = dash_formatter.init_filters(property_options)
         return output(filter_container=filter_container,
+                      search_quick_input="",
                       show_search_dialog=True, grey_background=True)
 
 
@@ -976,19 +1014,160 @@ def main_callback(*args):
 
     ## ADD SEARCH CRITERIA ##
     elif context.triggered[0]['prop_id'].split('.')[0] == 'add-search-property-button':
-        filter_container = callback_kwargs['filter_container']
-        for idx, filter in enumerate(filter_container):
-            if filter['props']['hidden']:
-                filter_container[idx]['props']['hidden'] = False
-                return output(filter_container=filter_container, grey_background=True)
-        return output(message=dash_formatter.dash_message('Reached maximal number of filters.', success=False),
+        filter_container = callback_kwargs.get('filter_container')
+        if filter_container:
+            for idx, f in enumerate(filter_container):
+                if f.get('props', {}).get('hidden'):
+                    filter_container[idx]['props']['hidden'] = False
+                    local_kwargs = {
+                        'filter_container': filter_container,
+                        'hide_filter_' + str(idx): False,
+                        'grey_background': True,
+                    }
+                    return output(**local_kwargs)
+        return output(message=dash_formatter.dash_message('Reached maximal number of filters (10).', success=False),
                       grey_background=True)
 
     ## APPLY FILTER ##
     elif context.triggered[0]['prop_id'].split('.')[0] == 'apply-filter-button':
-        return output(show_search_dialog=False,
-                      message=dash_formatter.dash_message(message='Filter could not be applied.', success=False)
-                      )
+        if not active_network or not active_network.elements:
+            message = dash_formatter.dash_message('Please load a network first to filter.', success=False)
+            return output(message=message, show_search_dialog=False, grey_background=False)
+
+        quick_search = (callback_kwargs.get('search_quick_input') or '').strip().lower()
+        search_props = callback_kwargs.get('search_property_dropdown_input') or []
+        and_or_radios = callback_kwargs.get('and_or_radios') or ['AND'] * 10
+
+        criteria = []
+        for idx in range(10):
+            prop = search_props[idx] if idx < len(search_props) else None
+            val = callback_kwargs.get(f'search_value_{idx}')
+            op = and_or_radios[idx] if idx < len(and_or_radios) else 'AND'
+            if prop and val:
+                val_list = [str(v).strip().lower() for v in (val if isinstance(val, list) else [val]) if str(v).strip()]
+                if val_list:
+                    criteria.append({
+                        'prop': prop,
+                        'values': val_list,
+                        'op': op
+                    })
+
+        if not quick_search and not criteria:
+            message = dash_formatter.dash_message('Please enter a search keyword or select a filter property and value.', success=False)
+            return output(message=message, grey_background=True)
+
+        matched_node_ids = set()
+        for e in active_network.elements:
+            if e.get('group') != 'nodes':
+                continue
+            data = e.get('data', {})
+            node_id = str(data.get('id', ''))
+            node_label = str(data.get('label', ''))
+            node_type = str(data.get('type', ''))
+            node_info = data.get('info', {}) if isinstance(data.get('info'), dict) else {}
+
+            all_props = {}
+            if getattr(active_network, 'nodes', None) and node_id in active_network.nodes:
+                if isinstance(active_network.nodes[node_id], dict):
+                    all_props.update(active_network.nodes[node_id])
+            all_props.update(node_info)
+            all_props['id'] = node_id
+            all_props['label'] = node_label
+            all_props['type'] = node_type
+
+            # Quick search match
+            quick_match = True
+            if quick_search:
+                quick_match = any(quick_search in str(v).lower() for v in all_props.values())
+
+            # Criteria match
+            crit_match = True
+            if criteria:
+                crit_results = []
+                for c in criteria:
+                    target_prop = c['prop']
+                    target_vals = c['values']
+                    actual_val = str(all_props.get(target_prop, '')).strip().lower()
+                    matched_this = any(tv == actual_val or tv in actual_val for tv in target_vals)
+                    crit_results.append((matched_this, c['op']))
+
+                accum = crit_results[0][0]
+                for i in range(1, len(crit_results)):
+                    op = crit_results[i-1][1]
+                    if op == 'OR':
+                        accum = accum or crit_results[i][0]
+                    else:
+                        accum = accum and crit_results[i][0]
+                crit_match = accum
+
+            if quick_search and criteria:
+                if quick_match and crit_match:
+                    matched_node_ids.add(node_id)
+            elif quick_search:
+                if quick_match:
+                    matched_node_ids.add(node_id)
+            elif criteria:
+                if crit_match:
+                    matched_node_ids.add(node_id)
+
+        if not matched_node_ids:
+            message = dash_formatter.dash_message('No entities found matching the search criteria.', success=False)
+            return output(message=message, grey_background=True)
+
+        active_network.selected_nodes = set(matched_node_ids)
+        active_network.selected_edges.clear()
+
+        for e in active_network.elements:
+            if e.get('group') == 'nodes':
+                is_sel = e['data']['id'] in matched_node_ids
+                e['data']['selected'] = is_sel
+                e['data']['highlighted'] = is_sel
+                e['data']['incoming_neighbor_selected'] = False
+            elif e.get('group') == 'edges':
+                s_sel = e['data']['source'] in matched_node_ids
+                t_sel = e['data']['target'] in matched_node_ids
+                e['data']['source_selected'] = s_sel
+                e['data']['target_selected'] = t_sel
+                e['data']['highlighted'] = s_sel and t_sel
+
+        node_table, edge_table, label_table = get_interaction_tables(active_network)
+        preview_names = list(matched_node_ids)[:4]
+        preview_str = ', '.join(preview_names)
+        if len(matched_node_ids) > 4:
+            preview_str += f' (+{len(matched_node_ids)-4} more)'
+        msg = f"Search matched {len(matched_node_ids)} node(s): {preview_str}. Matched nodes highlighted."
+        message = dash_formatter.dash_message(msg, success=True)
+        visualizer_app.logger.info(msg)
+
+        return output(elements=active_network.elements, show_search_dialog=False,
+                      grey_background=False, message=message,
+                      node_interaction_table=node_table, edge_interaction_table=edge_table,
+                      label_interaction_table=label_table)
+
+    ## RESET FILTER ##
+    elif context.triggered[0]['prop_id'].split('.')[0] == 'reset-filter-button':
+        if active_network and active_network.elements:
+            active_network.selected_nodes.clear()
+            active_network.selected_edges.clear()
+            for e in active_network.elements:
+                if e.get('group') == 'nodes':
+                    e['data']['selected'] = False
+                    e['data']['highlighted'] = False
+                    e['data']['incoming_neighbor_selected'] = False
+                elif e.get('group') == 'edges':
+                    e['data']['source_selected'] = False
+                    e['data']['target_selected'] = False
+                    e['data']['highlighted'] = False
+            node_table, edge_table, label_table = get_interaction_tables(active_network)
+        else:
+            node_table, edge_table, label_table = [], [], []
+
+        message = dash_formatter.dash_message("Search filters and selections reset.", success=True)
+        return output(elements=active_network.elements if active_network else dash.no_update,
+                      show_search_dialog=False, grey_background=False,
+                      search_quick_input="", message=message,
+                      node_interaction_table=node_table, edge_interaction_table=edge_table,
+                      label_interaction_table=label_table)
 
 
 
@@ -1304,8 +1483,15 @@ def main_callback(*args):
     ############################
 
     elif context.triggered[0]['prop_id'].split('.')[0].startswith('{'):
-        type = context.triggered[0]['prop_id'].split('.')[0].split(',')[1].split(':')[1][1:-2]
-        my_id = context.triggered[0]['prop_id'].split('.')[0].split(',')[0][1:]
+        prop_str = context.triggered[0]['prop_id'].split('.')[0]
+        try:
+            trigger_json = json.loads(prop_str)
+            type = trigger_json.get('type')
+            raw_id = trigger_json.get('id')
+        except Exception:
+            type = prop_str.split(',')[1].split(':')[1][1:-2]
+            raw_id = prop_str.split(',')[0][1:]
+        my_id = prop_str.split(',')[0][1:]
 
         ### REMOVE EDIT PROPERTY ###
         if type == 'remove-input-field':
@@ -1389,43 +1575,51 @@ def main_callback(*args):
         ## CHOOSE FILTER PROPERTY ##
         # When property is chosen, load according values
         elif type == 'search-property-dropdown':
-            dropdown_id = my_id[-2]
-            if callback_kwargs['search_property_dropdown_input'][int(dropdown_id)] == None:
+            dropdown_id = str(raw_id)
+            selected_prop = context.triggered[0].get('value')
+            if not selected_prop and callback_kwargs.get('search_property_dropdown_input'):
+                try:
+                    selected_prop = callback_kwargs['search_property_dropdown_input'][int(dropdown_id)]
+                except Exception:
+                    selected_prop = None
+
+            if not selected_prop or selected_prop not in network_properties:
                 local_kwargs = {
                     'search_value_options_' + dropdown_id: [],
                     'grey_background': True,
                 }
             else:
-                options = dash_formatter.dash_type_options(
-                    network_properties[callback_kwargs['search_property_dropdown_input'][int(dropdown_id)]])
+                vals = sorted(list(network_properties[selected_prop]))
+                options = dash_formatter.dash_type_options(vals)
                 local_kwargs = {
-                    'search_value_options_' + dropdown_id : options,
+                    'search_value_options_' + dropdown_id: options,
                     'grey_background': True,
                 }
             return output(**local_kwargs)
 
         ## DELETE FILTER PROPERTY ##
         elif type == 'remove-search-field':
-            dropdown_id = my_id[-2]
+            dropdown_id = str(raw_id)
             ## Reset values ##
-            # property
-            filter_container = callback_kwargs['filter_conatiner']
-            filter_container[
-                int(dropdown_id)]['props']['children'][0]['props']['children'][0]['props']['value'] = None
-            # value
-            filter_container[
-                int(dropdown_id)]['props']['children'][1]['props']['children'][0]['props']['value'] = None
-            # value options
-            filter_container[
-                int(dropdown_id)]['props']['children'][1]['props']['children'][0]['props']['options'] = []
-            # And/Or selection
-            filter_container[
-                int(dropdown_id)]['props']['children'][2]['props']['children'][0]['props']['value'] = 'AND'
-            filter_container += [filter_container.pop(int(dropdown_id))]
+            filter_container = callback_kwargs.get('filter_container')
+            if filter_container and int(dropdown_id) < len(filter_container):
+                try:
+                    # property
+                    filter_container[int(dropdown_id)]['props']['children'][0]['props']['children'][0]['props']['value'] = None
+                    # value
+                    filter_container[int(dropdown_id)]['props']['children'][1]['props']['children'][0]['props']['value'] = None
+                    # value options
+                    filter_container[int(dropdown_id)]['props']['children'][1]['props']['children'][0]['props']['options'] = []
+                    # And/Or selection
+                    filter_container[int(dropdown_id)]['props']['children'][2]['props']['children'][0]['props']['value'] = 'AND'
+                    filter_container += [filter_container.pop(int(dropdown_id))]
+                except Exception:
+                    pass
+
             local_kwargs = {
-                'hide_filter_' + my_id[-2]: True,
+                'hide_filter_' + dropdown_id: True,
                 'grey_background': True,
-                'filter_container' : filter_container,
+                'filter_container': filter_container if filter_container else dash.no_update,
             }
             return output(**local_kwargs)
 

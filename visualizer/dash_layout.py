@@ -129,13 +129,13 @@ def init_layout(style, dataset_list, external_dataset_list= []):
                 ]),
                 html.Div(id='warning-div', children=[]),
                 html.Div(id='search-div', children=[
-                    dbc.Button(className='interaction-button', id='filter-button', disabled=True)
+                    dbc.Button(className='interaction-button', id='filter-button', disabled=False)
                 ]),
-                # dbc.Tooltip(
-                #     "Advanced search functionality was disabled until it is fully working.",
-                #     id="search-disabled",
-                #     target="search-div"
-                # ),
+                dbc.Tooltip(
+                    "Search and filter network elements",
+                    id="search-tooltip",
+                    target="filter-button"
+                ),
                 html.Div(id='interaction-div', children=[
                     dbc.Button('Test Button', className='interaction-button', id='test-button', style={'display': 'none'}),
                     dbc.Button('Edit\nElement', className='interaction-button', id='open-edit-element'),
@@ -531,20 +531,41 @@ advanced_search = html.Div([
         className='modal-content',
         centered=True,
         children=[
-            dbc.ModalHeader("Filter Network"),
-            html.Hr(),
+            dbc.ModalHeader("Search & Filter Network"),
+            html.Div(
+                style={'padding': '15px 20px 5px 20px'},
+                children=[
+                    html.Label("Quick Search (Name, ID, or Keyword):", style={'fontWeight': 'bold', 'fontSize': '12px', 'marginBottom': '5px', 'display': 'block'}),
+                    dcc.Input(
+                        id="search-quick-input",
+                        type="text",
+                        placeholder="Type name, ID, or keyword to search...",
+                        style={'width': '100%', 'padding': '8px 12px', 'borderRadius': '4px', 'border': '1px solid #ccc', 'fontSize': '13px', 'boxSizing': 'border-box'}
+                    ),
+                    html.Div(style={'fontSize': '11px', 'color': '#777', 'marginTop': '4px'}, children="Leave blank to use property-specific filters below.")
+                ]
+            ),
+            html.Hr(style={'margin': '10px 0'}),
+            html.Div(
+                style={'padding': '0 20px'},
+                children=[
+                    html.Label("Property Filters:", style={'fontWeight': 'bold', 'fontSize': '12px', 'marginBottom': '8px', 'display': 'block'}),
+                ]
+            ),
             dbc.ModalBody(id='filter-container', children=dash_formatter.init_filters([])),
-            html.Hr(),
+            html.Hr(style={'margin': '10px 0'}),
             html.Div(id='addsearch-criteria-div',
                      children=[
-                         html.Button("+",
+                         html.Button("+ Add Filter Property",
                                      id="add-search-property-button",
-                                     className="add-property-button")
+                                     className="add-property-button",
+                                     style={'width': '100%', 'padding': '6px'})
                      ]
             ),
-            html.Hr(),
+            html.Hr(style={'margin': '10px 0'}),
             dbc.ModalFooter([
-                dbc.Button("Apply", id="apply-edit-button", className="modal-button"),
+                dbc.Button("Reset", id="reset-filter-button", className="modal-button", style={'marginRight': 'auto'}),
+                dbc.Button("Apply", id="apply-filter-button", className="modal-button"),
                 dbc.Button("Close", id="close-dialog", className="modal-button")
             ])
         ],
