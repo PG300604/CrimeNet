@@ -35,7 +35,7 @@ parser = argparse.ArgumentParser()
 parser.add_argument('--data', required=False, help='Path to a folder containing datasets in the visualizers json format.')
 parser.add_argument('--debug', required=False, action='store_true', help='Start dash in debug mode.')
 parser.add_argument('--host', required=False, help='Set the host adress. Defaults to 0.0.0.0')
-args = parser.parse_args()
+args, _ = parser.parse_known_args()
 
 
 # LOAD EXTERNAL DATASET
