@@ -1926,10 +1926,14 @@ class ActiveNetwork(BuiltinDataset):
                         active_element_default_values['visualisation_social_influence_score']
         ##############
         elif task_id == 'community_detection':
+            self.last_community_result = None
             for element in self.elements:
                 if element['data']['element_type'] == 'node':
                     element['data']['community'] = active_element_default_values['community']
                     element['data']['community_confidence'] = active_element_default_values['community_confidence']
+                    if 'info' in element['data'] and isinstance(element['data']['info'], dict):
+                        element['data']['info'].pop('community', None)
+                        element['data']['info'].pop('community_confidence', None)
         ##############
         elif task_id == 'link_prediction':
             if node_ids is None:
@@ -1991,7 +1995,19 @@ class ActiveNetwork(BuiltinDataset):
         :return:
         """
 
-        network = {'edges': self.get_active_edges()}
+        node_meta = {}
+        for n in self.active_nodes:
+            if n in self.active_nodes and self.active_nodes[n]['element_index'] < len(self.elements):
+                el_data = self.elements[self.active_nodes[n]['element_index']].get('data', {})
+                lbl = el_data.get('label') or el_data.get('name') or n
+                ntype = el_data.get('type') or (el_data.get('info', {}).get('type') if isinstance(el_data.get('info'), dict) else 'person') or 'person'
+                node_meta[n] = {'label': str(lbl), 'name': str(lbl), 'type': str(ntype)}
+
+        network = {
+            'edges': self.get_active_edges(),
+            'nodes': list(self.active_nodes.keys()),
+            'node_metadata': node_meta
+        }
         if add_default_params:
             if task_id == 'link_prediction':
                 params['sources'] = list(self.selected_nodes)
@@ -2011,8 +2027,9 @@ class ActiveNetwork(BuiltinDataset):
             pass
         result = self.analyzer.perform_analysis(task=task, params=None)
         if result['success'] == 0:
-            # print(result['message'])
-            return
+            self.last_analysis_message = result.get('message', 'Analysis could not be performed.')
+            return result
+        self.last_analysis_message = None
         self.last_analysis = {'task_id': task['task_id'], 'options': task['options']}
         #################################
         if task_id == 'social_influence_analysis':
@@ -2040,8 +2057,9 @@ class ActiveNetwork(BuiltinDataset):
             # erase previous result
             self.erase_previous_analysis_result(task_id='social_influence_analysis')
             self.erase_previous_analysis_result(task_id='community_detection')
+            self.last_community_result = result
             # update the new result
-            membership = result['membership']
+            membership = result.get('membership', {})
             for node in membership:
                 if node in self.active_nodes:
                     element_index = self.active_nodes[node]['element_index']
@@ -2049,6 +2067,12 @@ class ActiveNetwork(BuiltinDataset):
                     c, m = list(membership[node].items())[0]
                     element['data']['community'] = c
                     element['data']['community_confidence'] = m
+                    if 'info' not in element['data'] or not isinstance(element['data']['info'], dict):
+                        element['data']['info'] = {}
+                    element['data']['info']['community'] = str(c)
+                    element['data']['info']['community_confidence'] = str(m)
+                    if node in self.nodes and isinstance(self.nodes[node], dict):
+                        self.nodes[node]['community'] = c
 
         #################################
         elif task_id == 'link_prediction':

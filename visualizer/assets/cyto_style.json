@@ -125,102 +125,6 @@
 			"width": "1.9px"
 		}
 	},
-		{
-		"selector": "edge[normalized_weight > 0.6]",
-		"style": {
-			"line-color": "#000000",
-			"width": "1.9px",
-			"arrow-scale": "1",
-			"target-arrow-color": "#000000"
-		}
-	},
-		{
-		"selector": "edge[normalized_weight < 0.4]",
-		"style": {
-			"line-color": "#444444",
-			"width": "1.3px",
-			"arrow-scale": "0.8",
-			"target-arrow-color": "#444444"
-		}
-	},
-			{
-		"selector": "edge[normalized_weight < 0.2]",
-		"style": {
-			"line-color": "#777777",
-			"width": "1px",
-			"arrow-scale": "0.7",
-			"target-arrow-color": "#777777"
-		}
-	},
-				{
-		"selector": "edge[normalized_weight < 0.05]",
-		"style": {
-			"width": "0.7px",
-			"arrow-scale": "0.6"
-		}
-	},
-	{
-		"selector": "edge[normalized_weight < 0.02]",
-		"style": {
-			"line-color": "grey",
-			"width": "0.5px"
-		}
-	},
-		{
-		"selector": "edge[normalized_weight < 0.005]",
-		"style": {
-			"line-color": "grey",
-			"width": "0.3px"
-		}
-	},
-	{
-		"selector": "edge[probability > 0.9]",
-		"style": {
-			"line-color": "#000000",
-			"width": "1.9px"
-		}
-	},
-		{
-		"selector": "edge[probability < 0.9]",
-		"style": {
-			"line-color": "#444444",
-			"width": "1.3px"
-		}
-	},
-			{
-		"selector": "edge[probability < 0.75]",
-		"style": {
-			"line-color": "#777777",
-			"width": "1px"
-		}
-	},
-				{
-		"selector": "edge[probability < 0.5]",
-		"style": {
-			"line-color": "#999999",
-			"width": "0.5px"
-		}
-	},
-					{
-		"selector": "edge[probability < 0.25]",
-		"style": {
-			"line-color": "#cccccc",
-			"width": "0.5px"
-		}
-	},
-						{
-		"selector": "edge[probability < 0.1]",
-		"style": {
-			"line-color": "#dddddd",
-			"width": "0.4px"
-		}
-	},
-			{
-		"selector": "edge[probability < 0.05]",
-		"style": {
-			"line-color": "#eeeeee"
-		}
-	},
 	{
 		"selector": "edge[?selected]",
 		"style": {
@@ -320,6 +224,108 @@
 		"selector": "node[community = 14]",
 		"style": {
 			"background-color": "#B32851"
+		}
+	},
+	{
+		"selector": "node[community = 15]",
+		"style": {
+			"background-color": "#2B823A"
+		}
+	},
+	{
+		"selector": "node[community = 16]",
+		"style": {
+			"background-color": "#7F180D"
+		}
+	},
+	{
+		"selector": "node[community = 17]",
+		"style": {
+			"background-color": "#93AA00"
+		}
+	},
+	{
+		"selector": "node[community = 18]",
+		"style": {
+			"background-color": "#593315"
+		}
+	},
+	{
+		"selector": "node[community = 19]",
+		"style": {
+			"background-color": "#F13A13"
+		}
+	},
+	{
+		"selector": "node[community = 20]",
+		"style": {
+			"background-color": "#232C16"
+		}
+	},
+	{
+		"selector": "node[community = 21]",
+		"style": {
+			"background-color": "#00A389"
+		}
+	},
+	{
+		"selector": "node[community = 22]",
+		"style": {
+			"background-color": "#4C6444"
+		}
+	},
+	{
+		"selector": "node[community = 23]",
+		"style": {
+			"background-color": "#FA0079"
+		}
+	},
+	{
+		"selector": "node[community = 24]",
+		"style": {
+			"background-color": "#16A085"
+		}
+	},
+	{
+		"selector": "node[community = 25]",
+		"style": {
+			"background-color": "#2980B9"
+		}
+	},
+	{
+		"selector": "node[community = 26]",
+		"style": {
+			"background-color": "#8E44AD"
+		}
+	},
+	{
+		"selector": "node[community = 27]",
+		"style": {
+			"background-color": "#D35400"
+		}
+	},
+	{
+		"selector": "node[community = 28]",
+		"style": {
+			"background-color": "#27AE60"
+		}
+	},
+	{
+		"selector": "node[community = 29]",
+		"style": {
+			"background-color": "#E67E22"
+		}
+	},
+	{
+		"selector": "node[community = 30]",
+		"style": {
+			"background-color": "#1ABC9C"
+		}
+	},
+	{
+		"selector": "node[community = 31]",
+		"style": {
+			"background-color": "#9B59B6"
 		}
 	},
 	{
@@ -454,6 +460,27 @@
 			"opacity": "0.08",
 			"events": "no",
 			"z-index": 1,
+			"z-index-compare": "manual"
+		}
+	},
+	{
+		"selector": "node.crimenet-cluster-node",
+		"style": {
+			"border-width": "4px",
+			"border-color": "#2563eb",
+			"border-opacity": "1",
+			"opacity": "1",
+			"z-index": 99990,
+			"z-index-compare": "manual"
+		}
+	},
+	{
+		"selector": "edge.crimenet-cluster-edge",
+		"style": {
+			"line-color": "#2563eb",
+			"width": "3px",
+			"opacity": "0.9",
+			"z-index": 99900,
 			"z-index-compare": "manual"
 		}
 	}

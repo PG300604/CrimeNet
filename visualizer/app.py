@@ -6,6 +6,7 @@ import sys
 import json
 import flask
 import dash
+from dash import html, dcc
 import dash_cytoscape as cyto
 from dash.dependencies import Input, Output
 from dash.exceptions import PreventUpdate
@@ -370,6 +371,7 @@ def main_callback(*args):
                               edge_interaction_table=edge_table,
                               label_interaction_table=label_table, network_info=network_info,
                               analysis_algorithms=[], analysis_parameter=dash_formatter.dash_default_parameter(),
+                              analysis_summary="", hierarchical_tree_data="",
                               hide_original_network_button=False, message=message, show_confirm_load=False)
 
             except Exception:
@@ -433,7 +435,7 @@ def main_callback(*args):
                 message = dash_formatter.dash_message(text, True)
                 visualizer_app.logger.info(text)
 
-                return output(analysis_algorithms=method_options, message=message)
+                return output(analysis_algorithms=method_options, message=message, analysis_summary="", hierarchical_tree_data="")
             except Exception:
                 text = "Error occurred selecting following analysis function: '{}'".format(callback_kwargs['analysis_function'])
                 message = dash_formatter.dash_message(text, False)
@@ -475,30 +477,129 @@ def main_callback(*args):
                 message = dash_formatter.dash_message(text, False)
                 visualizer_app.logger.warning(text)
                 return output(message=message)
-            if callback_kwargs['analysis_function'] == 'link_prediction':
+
+            fn = callback_kwargs['analysis_function']
+            algo = callback_kwargs['analysis_algorithm']
+            param1 = callback_kwargs.get('parameter_1')
+
+            analysis_summary_component = None
+            hierarchical_tree_json = ""
+
+            if fn == 'link_prediction':
                 if not active_network.selected_nodes:
                     text = "Could not apply link prediction. Please select atleast one node to predict links for."
                     message = dash_formatter.dash_message(text, False)
                     visualizer_app.logger.warning(text)
                     return output(message=message)
-                active_network.apply_analysis(callback_kwargs['analysis_function'], callback_kwargs['analysis_algorithm'], params={
-                    "sources": [], 'community_detection_method': callback_kwargs['parameter_1']})
+                active_network.apply_analysis(fn, algo, params={
+                    "sources": [], 'community_detection_method': param1})
                 text = "Applied link prediction using {}. " \
-                       "The 3 most probable links from the selected node(s) are displayed".format(callback_kwargs['analysis_algorithm'])
-            else:
-                if callback_kwargs['parameter_1']:
-                    active_network.apply_analysis(callback_kwargs['analysis_function'], callback_kwargs['analysis_algorithm'], params={
-                        "K": int(callback_kwargs['parameter_1'])})
-                    text = "Applied {} using {} with the following parameter: K: {}".format(
-                        callback_kwargs['analysis_function'], callback_kwargs['analysis_algorithm'], callback_kwargs['parameter_1']
-                    )
+                       "The 3 most probable links from the selected node(s) are displayed".format(algo)
+                analysis_summary_component = ""
+                hierarchical_tree_json = ""
+
+            elif fn == 'community_detection':
+                params = {}
+                if param1:
+                    try:
+                        params["K"] = int(param1)
+                    except (ValueError, TypeError):
+                        pass
+
+                active_network.apply_analysis(fn, algo, params=params)
+                if getattr(active_network, 'last_analysis_message', None):
+                    err_msg = active_network.last_analysis_message
+                    message = dash_formatter.dash_message(err_msg, success=False)
+                    return output(message=message, analysis_summary="", hierarchical_tree_data="")
+
+                res = getattr(active_network, 'last_community_result', None)
+                if not res or res.get('success') == 0:
+                    err_msg = "Community detection requires at least 2 connected nodes."
+                    message = dash_formatter.dash_message(err_msg, success=False)
+                    return output(message=message, analysis_summary="", hierarchical_tree_data="")
+
+                if algo == 'louvain':
+                    num_comms = res.get('num_communities', len(res.get('communities', []))) if res else len(set(e.get('data', {}).get('community') for e in active_network.elements if e.get('group') == 'nodes' and e.get('data', {}).get('community') is not None))
+                    num_nodes = res.get('nodes_analyzed', len(active_network.active_nodes)) if res else len(active_network.active_nodes)
+                    text = f"Communities Detected: {num_comms} | Nodes Analyzed: {num_nodes}"
+                    analysis_summary_component = html.Div(className='community-summary-card', children=[
+                        html.Div(className='summary-title', children="Community Detection — Louvain"),
+                        html.Div(className='summary-grid', children=[
+                            html.Div(className='summary-item', children=[
+                                html.Span('Communities Detected:', className='summary-label'),
+                                html.Span(str(num_comms), className='summary-value')
+                            ]),
+                            html.Div(className='summary-item', children=[
+                                html.Span('Nodes Analyzed:', className='summary-label'),
+                                html.Span(str(num_nodes), className='summary-value')
+                            ])
+                        ])
+                    ])
+                    hierarchical_tree_json = ""
+
+                elif algo == 'hierarchical':
+                    tree = res.get('tree') if res else None
+                    stats = res.get('stats', {}) if res else {}
+                    total_entities = stats.get('total_entities', len(active_network.active_nodes))
+                    total_clusters = stats.get('total_clusters', len(res.get('communities', [])) if res else 0)
+                    hierarchy_depth = stats.get('hierarchy_depth', 0)
+                    text = f"Hierarchical Clustering Applied — Total Entities: {total_entities} | Total Clusters: {total_clusters} | Hierarchy Depth: {hierarchy_depth}"
+                    analysis_summary_component = html.Div(className='community-summary-card', children=[
+                        html.Div(className='summary-title', children="Hierarchical Clustering Structure"),
+                        html.Div(className='summary-grid', children=[
+                            html.Div(className='summary-item', children=[
+                                html.Span('Total Entities:', className='summary-label'),
+                                html.Span(str(total_entities), className='summary-value')
+                            ]),
+                            html.Div(className='summary-item', children=[
+                                html.Span('Total Clusters:', className='summary-label'),
+                                html.Span(str(total_clusters), className='summary-value')
+                            ]),
+                            html.Div(className='summary-item', children=[
+                                html.Span('Hierarchy Depth:', className='summary-label'),
+                                html.Span(str(hierarchy_depth), className='summary-value')
+                            ])
+                        ])
+                    ])
+                    hierarchical_tree_json = json.dumps(tree) if tree else ""
+
                 else:
-                    active_network.apply_analysis(callback_kwargs['analysis_function'], callback_kwargs['analysis_algorithm'], params={})
-                    text = "Applied {} using {}.".format(callback_kwargs['analysis_function'], callback_kwargs['analysis_algorithm'])
+                    # Modularity, Label Propagation, etc.
+                    num_comms = res.get('num_communities', len(res.get('communities', []))) if res else len(set(e.get('data', {}).get('community') for e in active_network.elements if e.get('group') == 'nodes' and e.get('data', {}).get('community') is not None))
+                    num_nodes = res.get('nodes_analyzed', len(active_network.active_nodes)) if res else len(active_network.active_nodes)
+                    text = f"Communities Detected: {num_comms} | Nodes Analyzed: {num_nodes}"
+                    analysis_summary_component = html.Div(className='community-summary-card', children=[
+                        html.Div(className='summary-title', children=f"Community Detection — {algo.replace('_', ' ').title()}"),
+                        html.Div(className='summary-grid', children=[
+                            html.Div(className='summary-item', children=[
+                                html.Span('Communities Detected:', className='summary-label'),
+                                html.Span(str(num_comms), className='summary-value')
+                            ]),
+                            html.Div(className='summary-item', children=[
+                                html.Span('Nodes Analyzed:', className='summary-label'),
+                                html.Span(str(num_nodes), className='summary-value')
+                            ])
+                        ])
+                    ])
+                    hierarchical_tree_json = ""
+
+            else:
+                # social_influence_analysis, etc.
+                if param1:
+                    active_network.apply_analysis(fn, algo, params={"K": int(param1)})
+                    text = "Applied {} using {} with the following parameter: K: {}".format(fn, algo, param1)
+                else:
+                    active_network.apply_analysis(fn, algo, params={})
+                    text = "Applied {} using {}.".format(fn, algo)
+                analysis_summary_component = ""
+                hierarchical_tree_json = ""
 
             message = dash_formatter.dash_message(text, True)
             visualizer_app.logger.info(text)
-            return output(elements=active_network.elements, message=message)
+            return output(elements=active_network.elements,
+                          message=message,
+                          analysis_summary=analysis_summary_component,
+                          hierarchical_tree_data=hierarchical_tree_json)
         except Exception:
             text = "An error occurred while trying to apply network analysis. Please select a analysis function and algorithm "
             message = dash_formatter.dash_message(text, False)
@@ -636,7 +737,8 @@ def main_callback(*args):
             visualizer_app.logger.info(text)
             return output(elements=active_network.elements, message=message,
                           grey_background=False, show_delete_dialog=False,
-                          network_info=network_info)
+                          network_info=network_info,
+                          analysis_summary="", hierarchical_tree_data="")
         except Exception:
             text = "An unexpected error occurred while trying to exclude elements."
             message = dash_formatter.dash_message(text, False)
@@ -678,6 +780,7 @@ def main_callback(*args):
             visualizer_app.logger.info(text)
             return output(elements=active_network.elements, network_info=network_info, message=message,
                           node_interaction_table=node_interaction_table, edge_interaction_table=edge_interaction_table,
+                          analysis_summary="", hierarchical_tree_data="",
                           layout=ACTIVE_LAYOUT)
         except Exception:
             text = "An unexpected error occurred while trying to isolate selected nodes."
@@ -705,7 +808,9 @@ def main_callback(*args):
             return output(elements=active_network.elements, stylesheet=style.stylesheet,
                           layout=ACTIVE_LAYOUT, network_info=network_info,
                           node_interaction_table=node_table, edge_interaction_table=edge_table,
-                          label_interaction_table=label_table, message=message)
+                          label_interaction_table=label_table,
+                          analysis_summary="", hierarchical_tree_data="",
+                          message=message)
         except Exception:
             text = "An unexpected error occurred while restoring full network view."
             visualizer_app.logger.exception(text)
@@ -737,7 +842,8 @@ def main_callback(*args):
                 visualizer_app.logger.info(text)
 
                 return output(elements=active_network.elements, network_info=network_info, message=message,
-                              node_interaction_table=node_interaction_table, edge_interaction_table=edge_interaction_table)
+                              node_interaction_table=node_interaction_table, edge_interaction_table=edge_interaction_table,
+                              analysis_summary="", hierarchical_tree_data="")
             else:
                 text = "No nodes were expanded. There are no expandable nodes in the network."
                 message = dash_formatter.dash_message(text, success=False)
@@ -770,7 +876,8 @@ def main_callback(*args):
                     edge_interaction_table.append(dash_formatter.get_element_interaction_row(edge_type, 'edge'))
 
                 return output(elements=active_network.elements, network_info=network_info, message=message,
-                              node_interaction_table=node_interaction_table, edge_interaction_table=edge_interaction_table)
+                              node_interaction_table=node_interaction_table, edge_interaction_table=edge_interaction_table,
+                              analysis_summary="", hierarchical_tree_data="")
             else:
                 message = dash_formatter.dash_message('Could not expand node(s)', success=False)
         return output(message=message)
@@ -853,6 +960,7 @@ def main_callback(*args):
                           label_interaction_table=label_interaction_table, entity_options=[],
                           entity_values=[], network_info=network_info, analysis_algorithms=[],
                           analysis_parameter=dash_formatter.dash_default_parameter(),
+                          analysis_summary="", hierarchical_tree_data="",
                           hide_original_network_button=False, message=message,
                           show_confirm_file_load=False, grey_background=False)
 
@@ -1263,6 +1371,7 @@ def main_callback(*args):
         return output(elements=active_network.elements, stylesheet=style.stylesheet,
                       grey_background=False, show_add_node_dialog=False, show_add_dialog=False,
                       add_addnode_property_label='', add_addnode_property_value='',
+                      analysis_summary="", hierarchical_tree_data="",
                       network_info=network_info)
 
     ########## ADD EDGE DIALOG ##############
@@ -1598,27 +1707,42 @@ def main_callback(*args):
 
 @visualizer_app.callback(Output('info-table', 'children'),
                          [Input('cytoscape', 'mouseoverNodeData'),
-               Input('cytoscape', 'mouseoverEdgeData')])
-def display_tap_node_data(node_data, edge_data):
+                          Input('cytoscape', 'mouseoverEdgeData'),
+                          Input('cytoscape', 'tapNodeData'),
+                          Input('cytoscape', 'tapEdgeData')])
+def display_tap_node_data(node_data, edge_data, tap_node_data=None, tap_edge_data=None):
     """
-    Writes node data to infobox on mouseover events.
+    Writes node/edge data to infobox on mouseover and tap/selection events.
     :param node_data: Data of hovered node.
     :param edge_data: Data of hovered edge.
+    :param tap_node_data: Data of clicked/selected node.
+    :param tap_edge_data: Data of clicked/selected edge.
     :return:
     """
-
     context = dash.callback_context
+    if not context.triggered or not context.triggered[0]['prop_id']:
+        raise PreventUpdate
 
-    # Show node data when hovered over a node and edge data when hovered over edge.
-    if context.triggered[0]['prop_id'].split('.')[1] == 'mouseoverNodeData':
-        data = node_data['info']
+    prop = context.triggered[0]['prop_id'].split('.')[1]
+
+    # Show node data when hovered or tapped on a node
+    if prop in ('mouseoverNodeData', 'tapNodeData'):
+        target = node_data if prop == 'mouseoverNodeData' else tap_node_data
+        if not target or not isinstance(target, dict):
+            raise PreventUpdate
+        data = dict(target.get('info', {}))
+        if 'community' in target and target['community'] is not None and 'community' not in data:
+            data['community'] = target['community']
         info_table = dash_formatter.get_info_table()
         for element in data:
             info_table.append(dash_formatter.get_info_table_row(element, str(data[element])))
         return info_table
 
-    elif context.triggered[0]['prop_id'].split('.')[1] == 'mouseoverEdgeData': # if mouseoverEdgeData:
-        data = edge_data['info']
+    elif prop in ('mouseoverEdgeData', 'tapEdgeData'):
+        target = edge_data if prop == 'mouseoverEdgeData' else tap_edge_data
+        if not target or not isinstance(target, dict):
+            raise PreventUpdate
+        data = dict(target.get('info', {}))
         info_table = dash_formatter.get_info_table()
         for element in data:
             info_table.append(dash_formatter.get_info_table_row(element, str(data[element])))

@@ -45,6 +45,8 @@ outputs = [
     ## ANALYSIS TAB ##
     Output('analysis-algorithm', 'options'),
     Output('parameter-div', 'children'),
+    Output('analysis-summary', 'children'),
+    Output('hierarchical-tree-data', 'children'),
 
     ####################
     ## DIALOG OUTPUTS ##
@@ -456,6 +458,8 @@ def output(
         ## ANALYSIS TAB ##
         analysis_algorithms=dash.no_update,
         analysis_parameter=dash.no_update,
+        analysis_summary=dash.no_update,
+        hierarchical_tree_data=dash.no_update,
 
         ####################
         ## DIALOG OUTPUTS ##

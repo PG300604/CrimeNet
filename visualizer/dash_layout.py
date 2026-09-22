@@ -181,6 +181,9 @@ def init_layout(style, dataset_list, external_dataset_list= []):
                                              disabled=True)
                             ]),
                             html.Button('Analyze', className='inputs', id='analysis-button', n_clicks=0),
+                            html.Div(id='analysis-summary', className='analysis-summary-box'),
+                            html.Div(id='hierarchical-tree-data', style={'display': 'none'}),
+                            html.Div(id='hierarchical-tree-view-wrapper', className='hierarchical-tree-wrapper'),
                             html.Hr()
                         ])
                     ]),

@@ -24,25 +24,38 @@ def _get_sources(nx_graph, params, node_index):
 
 def _get_candidates(nx_graph, sources):
     """
-    find candidate (new) links for a list of nodes
-    :param network: networkx network
-    :param sources: list of node id
-    :return:
+    find candidate (new) links for a list of nodes.
+    Only returns node pairs that do NOT already have an edge in the graph.
+    :param nx_graph: networkx graph
+    :param sources: list of node ids
+    :return: list of (u, v) pairs representing potential/missing links
     """
     candidates = []
 
     if sources is None:
         sources = nx_graph.nodes
-    # TODO: to add more selection for identifying the candidates
+
+    # Pre-build the existing edge set for O(1) lookup
+    existing_edges = set(nx_graph.edges())
+    existing_edges_reversed = set((v, u) for u, v in existing_edges)
+    all_existing = existing_edges | existing_edges_reversed
+
     for u in sources:
-        neighbors = nx_graph.neighbors(u)
+        # Convert to a set immediately — nx_graph.neighbors() returns an iterator
+        # that gets exhausted if iterated, so we must materialise it first
+        neighbors_set = set(nx_graph.neighbors(u))
         second_hop_neighbors = set()
-        for v in neighbors:
+        for v in neighbors_set:
             second_hop_neighbors = second_hop_neighbors.union(set(nx_graph.neighbors(v)))
-        second_hop_neighbors = second_hop_neighbors.difference(neighbors)
-        if u in second_hop_neighbors:
-            second_hop_neighbors.remove(u)
-        candidates.extend([(u, v) for v in second_hop_neighbors])
+
+        # Remove direct neighbors AND self from candidates
+        second_hop_neighbors -= neighbors_set
+        second_hop_neighbors.discard(u)
+
+        # Final safety filter: exclude any pair that already has an edge
+        for v in second_hop_neighbors:
+            if (u, v) not in all_existing:
+                candidates.append((u, v))
 
     return candidates
 
