@@ -4,11 +4,8 @@ import json
 
 # find path to root directory of the project so as to import from other packages
 # print('current script: visualizer/test_imdb_toy_dataset.py')
-# print('os.path.abspath(__file__) = ', os.path.abspath(__file__))
-tokens = os.path.abspath(__file__).split('/')
-# print('tokens = ', tokens)
-path2root = '/'.join(tokens[:-2])
-# print('path2root = ', path2root)
+from pathlib import Path
+path2root = str(Path(os.path.abspath(__file__)).parents[1])
 if path2root not in sys.path:
     sys.path.append(path2root)
 
@@ -18,17 +15,13 @@ from storage.builtin_datasets import BuiltinDatasetsManager
 
 
 def test_community_detection():
-    data_manager = ToyDataManager(connector=None, params=None)
+    data_manager = BuiltinDatasetsManager(None, None)
     network_id = 'moreno_crime'
+    data_manager.add_dataset(network_id, 'Moreno Crime', f'{path2root}/datasets/preprocessed/moreno_crime.json')
     network = data_manager.get_network(network=network_id)
 
     test_network = {"edges": network.get('edges')[:100],
                     "nodes": network.get('nodes')[:100]}
-
-    
-    connector = None  # no connection needed for this file-base datasets
-    params = None  # no parameter defined for now
-    data_manager = BuiltinDatasetsManager(connector, params)
 
     # define task for testing
     task_id = "community_detection"

@@ -83,7 +83,8 @@ def node2vec(network, params):
     try:
         graph, node_ids = helpers.convert_to_nx_directed_graph(network, params, node_is_str=True)
         k = params['K']
-        print(nx.info(graph))
+        # Graph summary
+        print(f"Graph with {graph.number_of_nodes()} nodes and {graph.number_of_edges()} edges")
 
         model = Node2Vec(graph, walk_length=40, num_walks=80,
                          p=0.25, q=4, workers=8, use_rejection_sampling=0)
@@ -114,7 +115,8 @@ def deepwalk(network, params):
     try:
         graph, node_ids = helpers.convert_to_nx_directed_graph(network, params, node_is_str=True)
         k = params['K']
-        print(nx.info(graph))
+        # Graph summary
+        print(f"Graph with {graph.number_of_nodes()} nodes and {graph.number_of_edges()} edges")
 
         model = DeepWalk(graph, walk_length=40, num_walks=80, workers=8)
         model.train(embed_size=k, window_size=5, workers=8, iter=10)
@@ -144,7 +146,8 @@ def line(network, params):
     try:
         graph, node_ids = helpers.convert_to_nx_directed_graph(network, params, node_is_str=True)
         k = params['K']
-        print(nx.info(graph))
+        # Graph summary
+        print(f"Graph with {graph.number_of_nodes()} nodes and {graph.number_of_edges()} edges")
 
         model = LINE(graph, embedding_size=k, order='second')
         model.train(batch_size=1024, epochs=100, verbose=2)

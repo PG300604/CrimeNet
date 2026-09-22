@@ -220,8 +220,11 @@ class SocialInfluenceAnalyzer:
             'pagerank': pagerank,
             'authority': authority,
             'betweenness': betweenness,
+            'betweenness_centrality': betweenness,
             'katz_centrality': katz_centrality,
-            'closeness_centrality': closeness_centrality
+            'katz': katz_centrality,
+            'closeness_centrality': closeness_centrality,
+            'closeness': closeness_centrality
             # TODO: to add more methods from networkx, snap, and sklearn
         }
 

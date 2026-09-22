@@ -6,12 +6,13 @@ path_root_dir = os.path.join(os.path.dirname(__file__), os.path.pardir)
 if path_root_dir not in sys.path:
     sys.path.append(path_root_dir)
 
-from storage.toy_datasets.toy_data_manager import ToyDataManager
+from storage.builtin_datasets import BuiltinDatasetsManager
 from analyzer.request_taker import InMemoryAnalyzer
 
 
 def test_link_prediction():
-    data_manager = ToyDataManager(connector=None, params=None)
+    data_manager = BuiltinDatasetsManager(None, None)
+    data_manager.add_dataset('moreno_crime', 'Moreno Crime', os.path.join(path_root_dir, 'datasets', 'preprocessed', 'moreno_crime.json'))
     network = data_manager.get_network(network='moreno_crime')
 
     test_network = {"edges": network.get('edges')[:1000], "nodes": network.get('nodes')[:1000]}

@@ -255,9 +255,10 @@ def louvain_communities_method(network, params):
         graph, node_ids = helpers.convert_to_nx_undirected_graph(network)
         if 'nodes' in network and network['nodes']:
             for n in network['nodes']:
-                if n not in node_ids:
+                n_id = n.get('id', n.get('name', '')) if isinstance(n, dict) else str(n)
+                if n_id and n_id not in node_ids:
                     graph.add_node(len(node_ids))
-                    node_ids.append(n)
+                    node_ids.append(n_id)
 
         if graph.number_of_nodes() < 2 or graph.number_of_edges() == 0:
             return {
@@ -315,9 +316,10 @@ def hierarchical_communities(network, params):
         graph, node_ids = helpers.convert_to_nx_undirected_graph(network)
         if 'nodes' in network and network['nodes']:
             for n in network['nodes']:
-                if n not in node_ids:
+                n_id = n.get('id', n.get('name', '')) if isinstance(n, dict) else str(n)
+                if n_id and n_id not in node_ids:
                     graph.add_node(len(node_ids))
-                    node_ids.append(n)
+                    node_ids.append(n_id)
 
         n_nodes = len(node_ids)
         if n_nodes < 2 or graph.number_of_edges() == 0:

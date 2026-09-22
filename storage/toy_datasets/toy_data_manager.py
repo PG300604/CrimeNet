@@ -5,11 +5,8 @@ import os
 # find path to root directory of the project so as to import from other packages
 # to be refactored
 # print('current script: storage/toy_datasets/toy_data_manager.py')
-# print('os.path.abspath(__file__) = ', os.path.abspath(__file__))
-tokens = os.path.abspath(__file__).split('/')
-# print('tokens = ', tokens)
-path2root = '/'.join(tokens[:-3])
-# print('path2root = ', path2root)
+from pathlib import Path
+path2root = str(Path(os.path.abspath(__file__)).parents[2])
 if path2root not in sys.path:
     sys.path.append(path2root)
 

@@ -400,7 +400,16 @@
 
   function focusActiveCluster() {
     const cy = getCytoscape();
-    if (!cy || !selectedClusterNodeIds || selectedClusterNodeIds.length === 0) return;
+    if (!cy) return;
+
+    if (!selectedClusterNodeIds || selectedClusterNodeIds.length === 0) {
+      const firstHeader = document.querySelector('.hclust-node-header');
+      if (firstHeader) {
+        firstHeader.click();
+        return;
+      }
+      return;
+    }
 
     const clusterNodeSet = new Set(selectedClusterNodeIds.map(String));
     const clusterNodes = cy.nodes().filter(node => clusterNodeSet.has(String(node.id())));

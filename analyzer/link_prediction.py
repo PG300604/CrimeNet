@@ -494,8 +494,11 @@ class LinkPredictor:
         self.algorithm = algorithm
         self.methods = {
             'resource_allocation_index': resource_allocation_index,
+            'resource_allocation': resource_allocation_index,
             'jaccard_coefficient': jaccard_coefficient,
+            'jaccard': jaccard_coefficient,
             'adamic_adar_index': adamic_adar_index,
+            'adamic_adar': adamic_adar_index,
             'preferential_attachment': preferential_attachment,
             'count_number_soundarajan_hopcroft': count_number_soundarajan_hopcroft,
             'resource_allocation_index_soundarajan_hopcroft': resource_allocation_index_soundarajan_hopcroft,

@@ -1650,49 +1650,61 @@ input[type="radio"] {
 
 /* Toolbar */
 .hclust-toolbar {
-    display: flex;
-    gap: 5px;
-    padding: 6px 8px;
+    display: flex !important;
+    flex-direction: row !important;
+    flex-wrap: nowrap !important;
+    gap: 4px !important;
+    padding: 6px 8px !important;
     background: #F9F8F7;
     border-bottom: 1px solid #E6E5E3;
-    flex-wrap: wrap;
-    align-items: center;
+    align-items: center !important;
+    width: 100%;
+    box-sizing: border-box;
 }
 
 .hclust-btn {
-    background: #FFFFFF;
-    border: 1px solid #d0d7de;
-    border-radius: 4px;
-    font-size: 10.5px;
-    font-weight: 600;
-    color: #333333;
-    padding: 3px 8px;
-    cursor: pointer;
-    transition: all 0.15s ease;
-    white-space: nowrap;
-    letter-spacing: 0.02em;
+    background: #FFFFFF !important;
+    border: 1px solid #d0d7de !important;
+    border-radius: 4px !important;
+    font-size: 11px !important;
+    font-weight: 600 !important;
+    color: #333333 !important;
+    height: 28px !important;
+    line-height: 26px !important;
+    padding: 0 7px !important;
+    cursor: pointer !important;
+    transition: all 0.15s ease !important;
+    white-space: nowrap !important;
+    letter-spacing: normal !important;
+    text-transform: none !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    box-sizing: border-box !important;
+    margin: 0 !important;
+    flex: 1 1 auto;
 }
 
 .hclust-btn:hover {
-    background: #F0F4F8;
-    color: #2783DE;
-    border-color: #2783DE;
+    background: #F0F4F8 !important;
+    color: #2783DE !important;
+    border-color: #2783DE !important;
 }
 
 .hclust-btn:active {
-    background: #e2eaf2;
+    background: #e2eaf2 !important;
 }
 
 .hclust-btn-reset {
-    color: #b91c1c;
-    border-color: #fca5a5;
-    margin-left: auto;
+    color: #b91c1c !important;
+    border-color: #fca5a5 !important;
+    flex: 0 0 auto;
 }
 
 .hclust-btn-reset:hover {
-    background: #fef2f2;
-    color: #991b1b;
-    border-color: #ef4444;
+    background: #fef2f2 !important;
+    color: #991b1b !important;
+    border-color: #ef4444 !important;
 }
 
 /* Cluster Inspection Card */
