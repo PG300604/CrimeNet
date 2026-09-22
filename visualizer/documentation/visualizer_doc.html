@@ -57,80 +57,6 @@
       flex-direction: column;
       min-height: 100vh;
     }
-
-    /* ─── TOP NAVBAR ─────────────────────────────────────────── */
-    .top-navbar {
-      position: sticky;
-      top: 0;
-      z-index: 100;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      height: 60px;
-      padding: 0 28px;
-      background: rgba(255, 255, 255, 0.94);
-      backdrop-filter: blur(12px);
-      border-bottom: 1px solid var(--border);
-    }
-    .brand-group {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-    }
-    .brand-shield {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      width: 34px;
-      height: 34px;
-      background: linear-gradient(135deg, #1e40af, #2563eb);
-      color: #fff;
-      border-radius: 8px;
-      font-weight: 800;
-      font-size: 16px;
-      box-shadow: 0 2px 8px rgba(37, 99, 235, 0.25);
-    }
-    .brand-title {
-      font-size: 1.15rem;
-      font-weight: 700;
-      color: #0f172a;
-      letter-spacing: -0.02em;
-    }
-    .brand-badge {
-      display: inline-block;
-      font-size: 0.72rem;
-      font-weight: 600;
-      text-transform: uppercase;
-      letter-spacing: 0.05em;
-      padding: 2px 8px;
-      background: var(--primary-light);
-      color: var(--primary);
-      border: 1px solid var(--primary-border);
-      border-radius: 9999px;
-      margin-left: 8px;
-    }
-    .top-nav-links {
-      display: flex;
-      align-items: center;
-      gap: 16px;
-    }
-    .top-nav-btn {
-      display: inline-flex;
-      align-items: center;
-      gap: 6px;
-      padding: 7px 14px;
-      font-size: 0.85rem;
-      font-weight: 600;
-      text-decoration: none;
-      color: #fff;
-      background: var(--primary);
-      border-radius: 6px;
-      transition: background 0.15s ease;
-    }
-    .top-nav-btn:hover {
-      background: #1d4ed8;
-    }
-
     /* ─── MAIN LAYOUT WRAPPER ────────────────────────────────── */
     .docs-layout {
       display: flex;
@@ -145,12 +71,35 @@
       width: var(--sidebar-w);
       flex-shrink: 0;
       position: sticky;
-      top: 60px;
-      height: calc(100vh - 60px);
+      top: 0;
+      height: 100vh;
       overflow-y: auto;
-      padding: 28px 18px;
+      padding: 24px 18px;
       border-right: 1px solid var(--border);
       background: #ffffff;
+    }
+    .sidebar-header {
+      margin-bottom: 16px;
+      padding-bottom: 14px;
+      border-bottom: 1px solid var(--border);
+    }
+    .sidebar-return-btn {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      width: 100%;
+      padding: 8px 12px;
+      font-size: 0.82rem;
+      font-weight: 600;
+      text-decoration: none;
+      color: #fff;
+      background: var(--primary);
+      border-radius: 6px;
+      transition: background 0.15s ease;
+    }
+    .sidebar-return-btn:hover {
+      background: #1d4ed8;
     }
     .toc-section-title {
       font-size: 0.72rem;
@@ -198,19 +147,6 @@
       border-bottom: 1px solid var(--border);
       margin-bottom: 40px;
     }
-    .doc-hero-tag {
-      display: inline-flex;
-      align-items: center;
-      gap: 6px;
-      font-size: 0.78rem;
-      font-weight: 600;
-      color: var(--teal);
-      background: var(--teal-light);
-      border: 1px solid #99f6e4;
-      padding: 3px 10px;
-      border-radius: 6px;
-      margin-bottom: 12px;
-    }
     .doc-hero h1 {
       font-size: 2.3rem;
       font-weight: 800;
@@ -229,7 +165,7 @@
     /* ─── HEADINGS & SECTIONS ────────────────────────────────── */
     section.doc-section {
       margin-bottom: 56px;
-      scroll-margin-top: 80px;
+      scroll-margin-top: 24px;
     }
     h2.section-header {
       display: flex;
@@ -500,25 +436,16 @@
 </head>
 <body>
 
-  <!-- ─── TOP NAVBAR ───────────────────────────────────────────── -->
-  <header class="top-navbar">
-    <div class="brand-group">
-      <div class="brand-shield">&#9670;</div>
-      <div class="brand-title">CrimeNet Visualizer</div>
-      <span class="brand-badge">Official Manual</span>
-    </div>
-    <div class="top-nav-links">
-      <a href="http://127.0.0.1:8050/" class="top-nav-btn">
-        <span>&larr; Return to Console</span>
-      </a>
-    </div>
-  </header>
-
   <!-- ─── MAIN LAYOUT ─────────────────────────────────────────── -->
   <div class="docs-layout">
 
     <!-- ─── SIDEBAR NAVIGATION ────────────────────────────────── -->
     <aside class="docs-sidebar">
+      <div class="sidebar-header">
+        <a href="http://127.0.0.1:8050/" class="sidebar-return-btn">
+          <span>&larr; Return to Console</span>
+        </a>
+      </div>
       <div class="toc-section-title">Overview & Architecture</div>
       <a href="#sec-overview" class="toc-link">&#9658; 1. System Overview</a>
       <a href="#sec-investigation-flow" class="toc-link">&#9658; 2. Investigation Lifecycle Flow</a>
@@ -550,7 +477,6 @@
 
       <!-- HERO HEADER -->
       <div class="doc-hero">
-        <div class="doc-hero-tag">Team UNBOUND &middot; Problem Statement SIH26189</div>
         <h1>CrimeNet Network Visualizer &amp; Intelligence Engine</h1>
         <p class="doc-hero-sub">
           Comprehensive user guide and technical documentation for law enforcement investigators, intelligence analysts, and forensic researchers operating the CrimeNet graph analysis platform.
