@@ -9,6 +9,7 @@ import shutil
 import logging
 from typing import List, Dict, Any, Optional
 from pathlib import Path
+from datetime import datetime
 
 from fastapi import FastAPI, UploadFile, File, Form, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
@@ -23,6 +24,15 @@ from .agents.dossier_agent import default_dossier_agent
 from .agents.financial_agent import default_financial_agent
 from .agents.feedback_agent import default_feedback_agent
 from .audit_ledger import default_audit_ledger
+
+# Architecture Plan Components
+from .storage.relational_store import default_relational_store
+from .storage.graph_store import default_graph_store
+from .storage.graph_rag import default_graph_rag
+from .intelligence.network_analytics import default_network_analytics
+from .intelligence.anomaly_detector import default_anomaly_detector
+from .intelligence.node_embeddings import default_embedding_engine
+from .agentic.investigative_workflow import investigative_app
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -153,6 +163,32 @@ class NewCaseRequest(BaseModel):
     initial_facts: Optional[str] = None
 
 
+class AnalyzeRequest(BaseModel):
+    nodes: List[Dict[str, Any]]
+    edges: List[Dict[str, Any]]
+    functionId: str
+    algoId: str
+
+
+class AnomaliesRequest(BaseModel):
+    nodes: List[Dict[str, Any]]
+    edges: List[Dict[str, Any]]
+
+
+class GraphRAGRequest(BaseModel):
+    case_id: str = "CASE-2024-MH-088"
+    query: str
+    top_k: int = 5
+
+
+class AgenticWorkflowRequest(BaseModel):
+    case_id: str = "CASE-2024-MH-088"
+    query: str
+    target_entity: Optional[str] = None
+    nodes: Optional[List[Dict[str, Any]]] = None
+    edges: Optional[List[Dict[str, Any]]] = None
+
+
 # --------------------------------------------------------------------------- #
 # API Routes
 # --------------------------------------------------------------------------- #
@@ -235,6 +271,17 @@ def investigate_narrative(req: NarrativeRequest):
         c_graph["nodes"][n.id] = n
     c_graph["edges"].extend(result.edges)
 
+    # Index into GraphRAG triples
+    try:
+        default_graph_rag.index_evidence_text(
+            case_id=req.case_id,
+            text=req.narrative,
+            source_doc="Investigator Narrative",
+            chunk_id=f"narrative_{datetime.now().strftime('%H%M%S')}"
+        )
+    except Exception as e:
+        logger.warning("GraphRAG indexing notice: %s", e)
+
     # Log to immutable audit ledger
     default_audit_ledger.record_action(
         action="NARRATIVE_INGESTION",
@@ -274,6 +321,31 @@ async def upload_evidence(
     doc = DocumentLoader.load_file(str(upload_path), case_id=case_id)
     doc_chunks = chunker.chunk_document(doc)
     added_count = default_vector_store.add_chunks(doc_chunks, case_id=case_id)
+
+    # Index chunks into GraphRAG knowledge triples
+    for chunk in doc_chunks:
+        try:
+            default_graph_rag.index_evidence_text(
+                case_id=case_id,
+                text=chunk.text,
+                source_doc=file.filename,
+                chunk_id=chunk.chunk_id
+            )
+        except Exception:
+            pass
+
+    # Save to Relational Database
+    try:
+        default_relational_store.add_evidence({
+            "id": f"EVID-{datetime.now().strftime('%Y%m%d%H%M%S')}",
+            "case_id": case_id,
+            "filename": file.filename,
+            "file_path": str(upload_path),
+            "file_size": os.path.getsize(upload_path),
+            "extracted_entities_count": 0
+        })
+    except Exception as e:
+        logger.warning("Relational evidence save notice: %s", e)
 
     # Extract entities from document text
     extraction = default_extractor.extract_from_narrative(doc.full_text[:5000], case_id=case_id)
@@ -532,6 +604,190 @@ Every automated lead has undergone investigator review and has been logged with 
         "edgesCount": len(c_graph["edges"]),
         "generatedAt": "Live"
     }
+
+
+# --------------------------------------------------------------------------- #
+# 13. Python Intelligence Layer (NetworkX, scikit-learn, Embeddings)
+# --------------------------------------------------------------------------- #
+@app.post("/api/intelligence/analyze")
+def run_python_analysis(req: AnalyzeRequest):
+    """
+    Executes Python graph analytics:
+    - Community Detection (Louvain, Modularity, Label Propagation)
+    - Social Influence (PageRank, Betweenness, Closeness, Degree Centrality)
+    - Link Prediction (Jaccard, Adamic-Adar, Resource Allocation)
+    - Node Embeddings (Node2Vec random walks & 2D PCA projection)
+    """
+    func_id = req.functionId
+    algo_id = req.algoId
+
+    # 1. Social Influence / Centrality
+    if func_id == "social_influence":
+        res = default_network_analytics.compute_centrality(req.nodes, req.edges, metric=algo_id)
+        return {
+            "type": "influence",
+            "title": algo_id.replace("_", " ").title(),
+            "scores": res["scores"],
+            "data": res["rankings"]
+        }
+
+    # 2. Community Detection
+    elif func_id == "community":
+        res = default_network_analytics.detect_communities(req.nodes, req.edges, algorithm=algo_id)
+        return {
+            "type": "community",
+            "title": algo_id.replace("_", " ").title(),
+            "groups": res["groups"],
+            "communityOf": res["communityOf"],
+            "data": res
+        }
+
+    # 3. Link Prediction
+    elif func_id == "link_prediction":
+        preds = default_network_analytics.predict_links(req.nodes, req.edges, method=algo_id)
+        return {
+            "type": "links",
+            "title": algo_id.replace("_", " ").title(),
+            "data": preds
+        }
+
+    # 4. Node Embedding
+    elif func_id == "node_embedding":
+        embed_res = default_embedding_engine.compute_embeddings(req.nodes, req.edges, method=algo_id)
+        return {
+            "type": "embedding",
+            "title": f"{algo_id.upper()} (2D Projection)",
+            "roles": embed_res["roles"],
+            "embeddings": embed_res["embeddings"],
+            "data": [
+                {
+                    "id": nid,
+                    "label": req.nodes[i].get("label", nid) if i < len(req.nodes) else nid,
+                    "type": req.nodes[i].get("type", "UNKNOWN") if i < len(req.nodes) else "UNKNOWN",
+                    "role": rinfo["role"],
+                    "coords": [rinfo["x"], rinfo["y"]]
+                }
+                for i, (nid, rinfo) in enumerate(embed_res["roles"].items())
+            ][:20]
+        }
+
+    raise HTTPException(status_code=400, detail=f"Unsupported analysis function: {func_id}")
+
+
+# 14. scikit-learn Isolation Forest Anomaly Detection
+@app.post("/api/intelligence/anomalies")
+def get_isolation_forest_anomalies(req: AnomaliesRequest):
+    """
+    Runs scikit-learn Isolation Forest on graph nodes and edges to isolate
+    mule funnel accounts, hub outliers, and unusual transaction bursts.
+    """
+    anomalies = default_anomaly_detector.detect_anomalies(req.nodes, req.edges)
+    bottlenecks = default_network_analytics.find_network_bottlenecks(req.nodes, req.edges)
+    return {
+        "status": "success",
+        "count": len(anomalies),
+        "anomalies": anomalies,
+        "bottlenecks": bottlenecks
+    }
+
+
+# 15. GraphRAG Knowledge Query Endpoint
+@app.post("/api/intelligence/graphrag/query")
+def query_graph_rag(req: GraphRAGRequest):
+    """
+    Executes hybrid GraphRAG query combining semantic text chunk search
+    with multi-hop Knowledge Graph triples.
+    """
+    result = default_graph_rag.query(case_id=req.case_id, query_text=req.query, top_k=req.top_k)
+    return result
+
+
+# 16. LangGraph Agentic Investigative Workflow
+@app.post("/api/intelligence/investigate")
+def run_investigative_workflow(req: AgenticWorkflowRequest):
+    """
+    Runs the complete LangGraph StateGraph pipeline:
+    Extract/Ingest -> GraphRAG -> NetworkX/scikit-learn Intelligence -> LLM Explainable Synthesis.
+    """
+    # Grab nodes/edges from active case or request payload
+    active_nodes = req.nodes
+    active_edges = req.edges
+    if not active_nodes:
+        c_graph = case_store.graphs.get(req.case_id, {"nodes": {}, "edges": []})
+        active_nodes = [n.to_dict() for n in c_graph["nodes"].values()]
+        active_edges = [e.to_dict() for e in c_graph["edges"]]
+
+    initial_state = {
+        "case_id": req.case_id,
+        "query": req.query,
+        "target_entity": req.target_entity,
+        "nodes": active_nodes or [],
+        "edges": active_edges or [],
+        "extracted_entities": [],
+        "graph_rag_context": {},
+        "networkx_metrics": {},
+        "isolation_forest_anomalies": [],
+        "node_embeddings": {},
+        "explainable_dossier": {},
+        "actionable_recommendations": []
+    }
+
+    try:
+        final_state = investigative_app.invoke(initial_state)
+
+        # Sync back to in-memory case graph
+        if req.case_id in case_store.graphs:
+            c_graph = case_store.graphs[req.case_id]
+            for n in final_state.get("nodes", []):
+                nid = n.get("id")
+                if nid and nid not in c_graph["nodes"]:
+                    c_graph["nodes"][nid] = GraphNode(
+                        id=str(nid),
+                        label=str(n.get("label", nid)),
+                        type=str(n.get("type", "UNKNOWN")),
+                        threat_level=str(n.get("threat_level", n.get("threatLevel", "MEDIUM"))),
+                        threat_score=float(n.get("threat_score", n.get("threatScore", 0.5))),
+                        metadata=dict(n.get("metadata", {}))
+                    )
+            for e in final_state.get("edges", []):
+                meta = dict(e.get("metadata", {}))
+                if "timestamp" in e:
+                    meta["timestamp"] = e["timestamp"]
+                c_graph["edges"].append(GraphEdge(
+                    id=str(e.get("id", f"{e.get('source')}->{e.get('target')}")),
+                    source=str(e.get("source")),
+                    target=str(e.get("target")),
+                    type=str(e.get("type", "CONNECTED")),
+                    label=str(e.get("label", e.get("type", "CONNECTED"))),
+                    amount=e.get("amount"),
+                    metadata=meta
+                ))
+
+        return {
+            "status": "success",
+            "case_id": req.case_id,
+            "dossier": final_state.get("explainable_dossier", {}),
+            "recommendations": final_state.get("actionable_recommendations", []),
+            "anomalies": final_state.get("isolation_forest_anomalies", []),
+            "networkx_metrics": final_state.get("networkx_metrics", {}),
+            "graph_rag": final_state.get("graph_rag_context", {}),
+            "nodesCount": len(final_state.get("nodes", [])),
+            "edgesCount": len(final_state.get("edges", []))
+        }
+    except Exception as e:
+        logger.error("LangGraph investigation pipeline error: %s", e, exc_info=True)
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+# 17. Relational Database Endpoints
+@app.get("/api/database/cases")
+def get_db_cases():
+    return default_relational_store.list_cases()
+
+
+@app.get("/api/database/evidence/{case_id}")
+def get_db_evidence(case_id: str):
+    return default_relational_store.list_evidence(case_id)
 
 
 if __name__ == "__main__":

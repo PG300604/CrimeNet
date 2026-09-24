@@ -11,13 +11,14 @@
  * - EXPORT DOSSIER: Printable & copyable case intelligence report
  */
 
-import React, { useMemo, useState } from "react";
+import React, { useMemo, useState, useEffect } from "react";
 import {
   Download, ExternalLink, Search, Sparkles, AlertCircle,
   Network, Share2, Clock, GitCommit, FileText, ChevronRight,
-  Printer, Copy, Check, Eye, Filter, ArrowRight
+  Printer, Copy, Check, Eye, Filter, ArrowRight, ShieldCheck, Play
 } from "lucide-react";
 import { TYPE_COLOR } from "./ReactFlowGraph";
+import { api } from "../lib/api";
 
 export default function AIAnnotationPanel({
   nodes = [],
@@ -37,6 +38,47 @@ export default function AIAnnotationPanel({
   const [nHopDistance, setNHopDistance] = useState(2);
   const [reportModalOpen, setReportModalOpen] = useState(false);
   const [copiedFlash, setCopiedFlash] = useState(false);
+  const [backendAnomalies, setBackendAnomalies] = useState([]);
+  const [langGraphBrief, setLangGraphBrief] = useState(null);
+  const [langGraphLoading, setLangGraphLoading] = useState(false);
+
+  // Fetch real scikit-learn Isolation Forest anomalies from FastAPI backend
+  useEffect(() => {
+    if (nodes && nodes.length > 0) {
+      api.getAnomalies({ nodes, edges })
+        .then((res) => {
+          if (res && res.anomalies) {
+            setBackendAnomalies(res.anomalies);
+          }
+        })
+        .catch((err) => console.warn("Backend anomalies notice:", err));
+    }
+  }, [nodes, edges]);
+
+  // Run LangGraph Agentic Investigative Workflow
+  const handleRunLangGraph = async () => {
+    setLangGraphLoading(true);
+    try {
+      const res = await api.runAgenticWorkflow({
+        caseId: caseName || "CASE-2024-MH-088",
+        query: `Analyze criminal syndicate structure, identify key brokers, and prescribe police action for ${nodes.length} entities.`,
+        nodes,
+        edges,
+      });
+      if (res && res.dossier) {
+        setLangGraphBrief(res);
+        if (res.anomalies && res.anomalies.length > 0) {
+          setBackendAnomalies(res.anomalies);
+        }
+        onToast?.("[LangGraph] Explainable intelligence synthesized!");
+      }
+    } catch (err) {
+      console.error("LangGraph error:", err);
+      onToast?.("LangGraph workflow error: " + (err.message || "Failed"));
+    } finally {
+      setLangGraphLoading(false);
+    }
+  };
 
   // ── Node & Adjacency Mapping ───────────────────────────────────────────────
   const { nodeMap, adj, degreeMap } = useMemo(() => {
@@ -280,6 +322,21 @@ export default function AIAnnotationPanel({
     return list.slice(0, 15);
   }, [nodes, edges, degreeMap, adj, nodeMap]);
 
+  // Combine scikit-learn Isolation Forest anomalies with heuristic fallbacks
+  const finalAnomalies = useMemo(() => {
+    if (backendAnomalies && backendAnomalies.length > 0) {
+      return backendAnomalies.map((a) => ({
+        sev: a.threat_level === "CRITICAL" || a.anomaly_score >= 0.75 ? "high" : "medium",
+        type: a.tags?.[0] || "Isolation Forest Anomaly",
+        badge: "ISO-FOREST",
+        subject: `${a.label} (${a.id})`,
+        nodeId: a.id,
+        why: `${a.reason} [Anomaly Confidence: ${Math.round(a.anomaly_score * 100)}%]`,
+      }));
+    }
+    return anomalies;
+  }, [backendAnomalies, anomalies]);
+
   // ── N-Hop Neighborhood Traversal ───────────────────────────────────────────
   const activeRootNode = useMemo(() => {
     return (selectedId && nodeMap.get(selectedId)) || topBroker || nodes[0];
@@ -449,7 +506,7 @@ export default function AIAnnotationPanel({
           className={`intel-subtab-btn ${activeSubtab === "anomalies" ? "active" : ""}`}
           onClick={() => setActiveSubtab("anomalies")}
         >
-          ANOMALIES ({anomalies.length})
+          ANOMALIES ({finalAnomalies.length})
         </button>
         <button
           className={`intel-subtab-btn ${activeSubtab === "nhop" ? "active" : ""}`}
@@ -518,6 +575,57 @@ export default function AIAnnotationPanel({
                 {Object.entries(typeCounts).map(([t, c]) => `${c} ${t}s`).join(", ")}.
               </div>
             </div>
+
+            {/* LangGraph Agentic Intelligence Trigger */}
+            <button
+              onClick={handleRunLangGraph}
+              disabled={langGraphLoading}
+              style={{
+                marginTop: 10,
+                marginBottom: 10,
+                width: "100%",
+                padding: "8px 12px",
+                borderRadius: 6,
+                border: "none",
+                background: "linear-gradient(135deg, #4f46e5, #7c3aed)",
+                color: "#ffffff",
+                fontWeight: 600,
+                fontSize: 12,
+                cursor: langGraphLoading ? "wait" : "pointer",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                gap: 6,
+                boxShadow: "0 2px 8px rgba(79, 70, 229, 0.25)"
+              }}
+            >
+              <Sparkles size={14} />
+              {langGraphLoading ? "Running LangGraph Workflow..." : "Synthesize AI Intelligence (LangGraph)"}
+            </button>
+
+            {langGraphBrief && (
+              <div className="unbound-card" style={{ marginBottom: 12, border: "1px solid #c7d2fe", background: "#f5f3ff", padding: 10 }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 6, color: "#4f46e5", fontWeight: 700, fontSize: 12, marginBottom: 6 }}>
+                  <ShieldCheck size={14} />
+                  LangGraph Explainable Intelligence Dossier
+                </div>
+                <div style={{ fontSize: 11.5, lineHeight: 1.5, color: "#1e1b4b", whiteSpace: "pre-wrap", marginBottom: 8 }}>
+                  {langGraphBrief.dossier?.executive_summary}
+                </div>
+                {langGraphBrief.recommendations && langGraphBrief.recommendations.length > 0 && (
+                  <div style={{ marginTop: 8, borderTop: "1px solid #e0e7ff", paddingTop: 6 }}>
+                    <div style={{ fontSize: 10.5, fontWeight: 700, color: "#4338ca", marginBottom: 4 }}>
+                      ACTIONABLE POLICE MEASURES:
+                    </div>
+                    {langGraphBrief.recommendations.map((rec, i) => (
+                      <div key={i} style={{ fontSize: 11, color: "#3730a3", marginBottom: 3 }}>
+                        • <b>{rec.action}</b> ({rec.statute}): {rec.rationale}
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
 
             {/* Search & Filter Entities */}
             <div className="unbound-sect-h" style={{ marginTop: 12 }}>
@@ -676,19 +784,19 @@ export default function AIAnnotationPanel({
         {activeSubtab === "anomalies" && (
           <div>
             <div className="unbound-sect-h">
-              Anomaly Alerts <span className="unbound-n">{anomalies.length}</span>
+              Anomaly Alerts <span className="unbound-n">{finalAnomalies.length}</span>
             </div>
             <div style={{ fontSize: 11, color: "#64748b", marginBottom: 8 }}>
-              Automated structural and operational risk detection.
+              Powered by scikit-learn Isolation Forest & topological graph analytics.
             </div>
 
-            {anomalies.length === 0 ? (
+            {finalAnomalies.length === 0 ? (
               <div style={{ padding: 24, textAlign: "center", color: "#94a3b8", fontSize: 12 }}>
                 No critical anomalies detected in current network.
               </div>
             ) : (
               <div className="unbound-card">
-                {anomalies.map((a, idx) => (
+                {finalAnomalies.map((a, idx) => (
                   <div key={idx} className="unbound-item">
                     <div className="unbound-t">
                       <span className={`unbound-badge ${a.sev === "high" ? "badge-red" : "badge-orange"}`}>

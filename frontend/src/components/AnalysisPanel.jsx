@@ -13,6 +13,7 @@ import {
   communityDetection, linkPrediction, topN,
 } from "../lib/graphAnalysis";
 import { TYPE_COLOR } from "./ReactFlowGraph";
+import { api } from "../lib/api";
 
 // ─── Analysis Functions & Algorithms (Matching Screenshots) ───────────────────
 const ANALYSIS_FUNCTIONS = [
@@ -127,7 +128,7 @@ export default function AnalysisPanel({
   };
 
   // ── Run Analysis ────────────────────────────────────────────────────────────
-  const runAnalyze = () => {
+  const runAnalyze = async () => {
     if (!selectedFunc) {
       onToast?.("Please choose an analysis function");
       return;
@@ -138,19 +139,65 @@ export default function AnalysisPanel({
     }
 
     setRunning(true);
+
+    try {
+      // 1. Execute on FastAPI Python Intelligence Gateway (NetworkX, scikit-learn, Embeddings)
+      const res = await api.runPythonAnalysis({
+        nodes,
+        edges,
+        functionId: selectedFunc.id,
+        algoId: selectedAlgo.id,
+      });
+
+      if (res) {
+        if (selectedFunc.id === "social_influence") {
+          setResults({
+            type: "influence",
+            title: `${selectedAlgo.label} (Python NetworkX)`,
+            data: res.data || [],
+          });
+          onApplyScores?.(res.scores, "centrality");
+          onToast?.(`[Python NetworkX] ${selectedAlgo.label} applied to canvas`);
+        } else if (selectedFunc.id === "community") {
+          setResults({
+            type: "community",
+            title: `${selectedAlgo.label} (Python NetworkX)`,
+            data: res.data,
+          });
+          onApplyCommunity?.(res.data);
+          onToast?.(`[Python NetworkX] ${res.groups} communities detected with ${selectedAlgo.label}`);
+        } else if (selectedFunc.id === "link_prediction") {
+          setResults({
+            type: "links",
+            title: `${selectedAlgo.label} (Python NetworkX)`,
+            data: res.data || [],
+          });
+          onToast?.(`[Python NetworkX] Computed ${res.data?.length || 0} predicted links`);
+        } else if (selectedFunc.id === "node_embedding") {
+          setResults({
+            type: "embedding",
+            title: `${selectedAlgo.label} (Python Embeddings)`,
+            data: res.data || [],
+          });
+          onToast?.(`[Python Intelligence] Embeddings computed via ${selectedAlgo.label}`);
+        }
+        setRunning(false);
+        return;
+      }
+    } catch (err) {
+      console.warn("Python backend analysis unavailable, falling back to local engine:", err);
+    }
+
+    // Client-side fallback if backend request encounters network hiccup
     setTimeout(() => {
       setRunning(false);
 
-      // 1. Social Influence Analysis
       if (selectedFunc.id === "social_influence") {
         let scores = {};
-        if (selectedAlgo.id === "pagerank") {
-          scores = pageRank(nodes, edges);
-        } else if (selectedAlgo.id === "betweenness") {
-          scores = betweennessCentrality(nodes, edges);
-        } else if (selectedAlgo.id === "closeness") {
-          scores = closenessCentrality(nodes, edges);
-        }
+        if (selectedAlgo.id === "pagerank") scores = pageRank(nodes, edges);
+        else if (selectedAlgo.id === "betweenness") scores = betweennessCentrality(nodes, edges);
+        else scores = closenessCentrality(nodes, edges);
+
         setResults({
           type: "influence",
           title: selectedAlgo.label,
@@ -158,10 +205,7 @@ export default function AnalysisPanel({
         });
         onApplyScores?.(scores, "centrality");
         onToast?.(`${selectedAlgo.label} applied to canvas`);
-      }
-
-      // 2. Community Detection
-      else if (selectedFunc.id === "community") {
+      } else if (selectedFunc.id === "community") {
         const res = communityDetection(nodes, edges);
         setResults({
           type: "community",
@@ -169,35 +213,25 @@ export default function AnalysisPanel({
           data: res,
         });
         onApplyCommunity?.(res);
-        onToast?.(`${res.groups} communities detected with ${selectedAlgo.label}`);
-      }
-
-      // 3. Link Prediction
-      else if (selectedFunc.id === "link_prediction") {
-        let method = "jaccard";
-        if (selectedAlgo.id === "resource_allocation") method = "resource_allocation";
-        if (selectedAlgo.id === "adamic_adar") method = "adamic_adar";
-
-        const predictions = linkPrediction(nodes, edges, method);
+        onToast?.(`${res.groups} communities detected`);
+      } else if (selectedFunc.id === "link_prediction") {
+        const preds = linkPrediction(nodes, edges, selectedAlgo.id);
         setResults({
           type: "links",
           title: selectedAlgo.label,
-          data: predictions,
+          data: preds,
         });
-        onToast?.(`Computed ${predictions.length} predicted links`);
-      }
-
-      // 4. Node Embedding
-      else if (selectedFunc.id === "node_embedding") {
+        onToast?.(`Computed ${preds.length} predicted links`);
+      } else {
         const scores = degreeCentrality(nodes, edges);
         setResults({
           type: "embedding",
           title: `${selectedAlgo.label} (2D Projection)`,
           data: topN(scores, nodes, 10),
         });
-        onToast?.(`Node embedding computed via ${selectedAlgo.label}`);
+        onToast?.(`Node embedding computed`);
       }
-    }, 320);
+    }, 250);
   };
 
   return (

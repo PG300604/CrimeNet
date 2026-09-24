@@ -131,4 +131,61 @@ export const api = {
     if (!res.ok) throw new Error("Failed to generate report");
     return await res.json();
   },
+
+  // 11. Python Graph Analytics (NetworkX, scikit-learn, Embeddings)
+  runPythonAnalysis: async ({ nodes, edges, functionId, algoId }) => {
+    const res = await fetch(`${BASE_URL}/intelligence/analyze`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ nodes, edges, functionId, algoId }),
+    });
+    if (!res.ok) throw new Error(`Analysis failed (${res.status})`);
+    return await res.json();
+  },
+
+  // 12. scikit-learn Isolation Forest Anomaly Detection
+  getAnomalies: async ({ nodes, edges }) => {
+    const res = await fetch(`${BASE_URL}/intelligence/anomalies`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ nodes, edges }),
+    });
+    if (!res.ok) throw new Error("Failed to compute anomaly detections");
+    return await res.json();
+  },
+
+  // 13. GraphRAG Knowledge Query
+  queryGraphRAG: async (caseId, query, topK = 5) => {
+    const res = await fetch(`${BASE_URL}/intelligence/graphrag/query`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ case_id: caseId, query, top_k: topK }),
+    });
+    if (!res.ok) throw new Error("Failed to query GraphRAG");
+    return await res.json();
+  },
+
+  // 14. LangGraph Investigative Workflow
+  runAgenticWorkflow: async ({ caseId = "CASE-2024-MH-088", query, targetEntity = null, nodes = null, edges = null }) => {
+    const res = await fetch(`${BASE_URL}/intelligence/investigate`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ case_id: caseId, query, target_entity: targetEntity, nodes, edges }),
+    });
+    if (!res.ok) throw new Error("LangGraph investigative workflow failed");
+    return await res.json();
+  },
+
+  // 15. Relational Store
+  getDbCases: async () => {
+    const res = await fetch(`${BASE_URL}/database/cases`);
+    if (!res.ok) throw new Error("Failed to fetch database cases");
+    return await res.json();
+  },
+
+  getDbEvidence: async (caseId) => {
+    const res = await fetch(`${BASE_URL}/database/evidence/${caseId}`);
+    if (!res.ok) throw new Error("Failed to fetch database evidence");
+    return await res.json();
+  },
 };
