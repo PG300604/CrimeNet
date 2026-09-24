@@ -20,7 +20,7 @@ import {
   RotateCcw, Eye, Maximize, GitFork, Crosshair, Copy,
   BookmarkPlus, ArrowRight, CheckCircle2, ChevronRight, ChevronLeft,
   AlignLeft, LayoutGrid, Sun, Moon,
-  Phone, Car, User, FileText,
+  Phone, Car, User, FileText, CreditCard, DollarSign,
 } from "lucide-react";
 import { springLayout, directionalLayout } from "../lib/graphAnalysis";
 
@@ -39,6 +39,9 @@ export const TYPE_COLOR = {
   org:          "#a855f7",
   organization: "#a855f7",
   phone:        "#06b6d4",
+  account:      "#10b981",
+  upi:          "#10b981",
+  bank:         "#10b981",
 };
 
 export const TYPE_ICON = {
@@ -54,6 +57,9 @@ export const TYPE_ICON = {
   email:        Mail,
   org:          Building2,
   organization: Building2,
+  account:      CreditCard,
+  upi:          CreditCard,
+  bank:         CreditCard,
 };
 
 export const COMMUNITY_PALETTE = [
@@ -415,7 +421,8 @@ const ReactFlowInner = forwardRef(function ReactFlowInner(
       const t = centralityOf[node.id];
       return `rgb(${Math.round(84 + t * 140)}, ${Math.round(179 - t * 80)}, ${Math.round(153 - t * 100)})`;
     }
-    return TYPE_COLOR[node.type] || "#54b399";
+    const cleanType = (node.type || "person").toLowerCase();
+    return TYPE_COLOR[cleanType] || "#54b399";
   }, [colorMode, communityOf, centralityOf]);
 
   // Compute 1-hop neighbors of selected node(s)

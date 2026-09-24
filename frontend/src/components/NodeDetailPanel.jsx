@@ -126,9 +126,22 @@ export default function NodeDetailPanel({
   };
 
   // All displayable properties
-  const props = Object.entries(node).filter(
-    ([k]) => !["id", "label", "type", "threatLevel", "threatScore"].includes(k)
-  );
+  // All displayable properties cleanly unpacked
+  const props = [];
+  Object.entries(node).forEach(([k, v]) => {
+    if (["id", "label", "type", "threatLevel", "threatScore"].includes(k)) return;
+    if (k === "properties" && typeof v === "object" && v !== null) {
+      Object.entries(v).forEach(([pk, pv]) => {
+        if (!["id", "label", "type", "name"].includes(pk)) {
+          props.push([pk, Array.isArray(pv) ? pv.join(", ") : String(pv)]);
+        }
+      });
+    } else if (typeof v === "object" && v !== null) {
+      props.push([k, JSON.stringify(v)]);
+    } else {
+      props.push([k, String(v)]);
+    }
+  });
 
   return (
     <div style={{ display: "flex", flexDirection: "column", height: "100%", overflow: "hidden" }}>

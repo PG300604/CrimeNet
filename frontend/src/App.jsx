@@ -165,14 +165,14 @@ export default function App() {
     [activeNodes, displayedEdges]
   );
 
-  // Unique node types and edge types from the active dataset
+  // Unique node types and edge types from active network
   const nodeTypesList = useMemo(() => {
-    return Array.from(new Set(currentDataset.nodes.map((n) => n.type || "person")));
-  }, [currentDataset]);
+    return Array.from(new Set(activeNodes.map((n) => (n.type || "person").toLowerCase())));
+  }, [activeNodes]);
 
   const edgeTypesList = useMemo(() => {
-    return Array.from(new Set(currentDataset.edges.map((e) => e.type || e.label || "connected_to")));
-  }, [currentDataset]);
+    return Array.from(new Set(activeEdges.map((e) => e.type || e.label || "connected_to")));
+  }, [activeEdges]);
 
   // Unique label variables across nodes
   const availableLabelVars = useMemo(() => {
@@ -565,6 +565,9 @@ export default function App() {
       return [...prev, ...toAdd];
     });
     notify(`CrimeNet AI updated network: +${newNodes.length} nodes, +${(newEdges || []).length} edges`);
+    setTimeout(() => {
+      canvasRef.current?.fit();
+    }, 300);
   }, [notify]);
 
   // ── File Upload / Export Handlers ──────────────────────────────────────────
