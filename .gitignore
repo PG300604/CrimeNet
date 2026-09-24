@@ -134,3 +134,4 @@ dmypy.json
 # Reference repo folder (user will delete after study)
 repo/
 analysis_results/*.json
+backend_storage/
