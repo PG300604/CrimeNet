@@ -16,10 +16,21 @@ CASES_METADATA_PATH = STORAGE_DIR / "cases_metadata.json"
 for d in [STORAGE_DIR, UPLOADS_DIR, VECTOR_INDEX_DIR]:
     d.mkdir(parents=True, exist_ok=True)
 
+# Load .env if present
+env_file = BASE_DIR / ".env"
+if env_file.exists():
+    with open(env_file, "r", encoding="utf-8") as f:
+        for line in f:
+            line = line.strip()
+            if line and not line.startswith("#") and "=" in line:
+                k, v = line.split("=", 1)
+                os.environ.setdefault(k.strip(), v.strip().strip("'\""))
+
 # API Keys & LLM settings
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY", "")
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY", "")
-LLM_PROVIDER = os.getenv("LLM_PROVIDER", "offline")  # "openai", "gemini", or "offline"
+GEMINI_MODEL = os.getenv("GEMINI_MODEL", "gemini-2.5-flash")
+LLM_PROVIDER = os.getenv("LLM_PROVIDER", "gemini")  # "gemini", "openai", or "offline"
 
 # RAG & Embeddings
 EMBEDDING_MODEL = os.getenv("EMBEDDING_MODEL", "all-MiniLM-L6-v2")

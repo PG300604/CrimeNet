@@ -21,6 +21,7 @@ import MergeElementsModal from "./components/MergeElementsModal";
 import DeleteConfirmModal from "./components/DeleteConfirmModal";
 import TacticalCommandBar from "./components/TacticalCommandBar";
 import GeminiChatSidebar from "./components/GeminiChatSidebar";
+import GeminiLeftChatbot from "./components/GeminiLeftChatbot";
 
 import { DATASETS_CATALOG, getDatasetById } from "./data/crimeNetDatasets";
 import { degreeMap as buildDegreeMap } from "./lib/graphAnalysis";
@@ -120,6 +121,7 @@ export default function App() {
 
   // ── Move Aside / Sidebar Collapse States ────────────────────────────────────
   const [leftSidebarCollapsed, setLeftSidebarCollapsed] = useState(false);
+  const [leftTab, setLeftTab] = useState("gemini"); // "gemini" | "controls"
   const [rightSidebarCollapsed, setRightSidebarCollapsed] = useState(false);
   const [rightSidebarMaximized, setRightSidebarMaximized] = useState(false);
 
@@ -671,37 +673,41 @@ export default function App() {
 
   return (
     <div className={`app ${theme}`} data-theme={theme}>
-      {/* ── Top Tactical Command Bar ─────────────────────────────────────────── */}
+      {/* ── Top Tactical Navigation Bar ─────────────────────────────────────── */}
       <TacticalCommandBar
         caseId={selectedDatasetId}
-        onGraphUpdate={handleGraphUpdate}
-        onNotify={notify}
-        onToggleGeminiChat={() => setIsGeminiChatOpen((prev) => !prev)}
-      />
-
-      {/* ── Google Gemini AI Chat Sidebar ──────────────────────────────────── */}
-      <GeminiChatSidebar
-        isOpen={isGeminiChatOpen}
-        onClose={() => setIsGeminiChatOpen(false)}
-        nodes={activeNodes}
-        edges={displayedEdges}
-        caseId={selectedDatasetId}
-        onGraphUpdate={handleGraphUpdate}
-        onSelectNode={(id) => {
-          handleSelect(id);
-          canvasRef.current?.center(id);
+        nodesCount={activeNodes.length}
+        edgesCount={displayedEdges.length}
+        onToggleGeminiChat={() => {
+          setLeftSidebarCollapsed(false);
+          setLeftTab((prev) => (prev === "gemini" ? "controls" : "gemini"));
         }}
-        onToast={notify}
+        onToggleTheme={toggleTheme}
+        theme={theme}
       />
 
       {/* ── Main Body ────────────────────────────────────────────────────────── */}
       <div className="body">
-        {/* ── Left Sidebar (Windows Application Style Boxes) ─────────────────── */}
-        <div className={`left-sidebar ${leftSidebarCollapsed ? "collapsed" : ""}`}>
-          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-            <span style={{ fontSize: 10.5, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.06em", color: "var(--text-muted)" }}>
-              Control Boxes
-            </span>
+        {/* ── Left Sidebar (Gemini AI Chatbot & Control Boxes) ─────────────────── */}
+        <div className={`left-sidebar ${leftSidebarCollapsed ? "collapsed" : ""} ${leftTab === "gemini" ? "gemini-mode" : ""}`}>
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 6, flexShrink: 0 }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 3, background: "var(--bg-2, #f1f5f9)", padding: "2px 4px", borderRadius: 6, border: "1px solid var(--border, #e2e8f0)" }}>
+              <button
+                type="button"
+                className={`left-nav-pill ${leftTab === "gemini" ? "active" : ""}`}
+                onClick={() => setLeftTab("gemini")}
+              >
+                <Sparkles size={11} /> Gemini Copilot
+              </button>
+              <button
+                type="button"
+                className={`left-nav-pill ${leftTab === "controls" ? "active" : ""}`}
+                onClick={() => setLeftTab("controls")}
+              >
+                <Layers size={11} /> Control Boxes
+              </button>
+            </div>
+
             <button
               className="win-btn"
               onClick={() => setLeftSidebarCollapsed(true)}
@@ -711,11 +717,25 @@ export default function App() {
             </button>
           </div>
 
-          {/* "OPEN ORIGINAL NETWORK" Button */}
-          <button className="btn-open-original" onClick={handleShowAllNodes}>
-            <FolderOpen size={13} />
-            Open Original Network
-          </button>
+          {leftTab === "gemini" ? (
+            <GeminiLeftChatbot
+              nodes={activeNodes}
+              edges={displayedEdges}
+              caseId={selectedDatasetId}
+              onGraphUpdate={handleGraphUpdate}
+              onSelectNode={(id) => {
+                handleSelect(id);
+                canvasRef.current?.center(id);
+              }}
+              onToast={notify}
+            />
+          ) : (
+            <>
+              {/* "OPEN ORIGINAL NETWORK" Button */}
+              <button className="btn-open-original" onClick={handleShowAllNodes}>
+                <FolderOpen size={13} />
+                Open Original Network
+              </button>
 
           {/* NODES Box Card */}
           <div className={`box-card ${boxStates.nodes.collapsed ? "collapsed" : ""} ${boxStates.nodes.maximized ? "maximized" : ""}`}>
@@ -919,6 +939,8 @@ export default function App() {
               </table>
             </div>
           </div>
+            </>
+          )}
         </div>
 
         {/* ── Main Canvas ────────────────────────────────────────────────────── */}
