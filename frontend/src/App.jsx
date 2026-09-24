@@ -666,6 +666,13 @@ export default function App() {
 
   return (
     <div className={`app ${theme}`} data-theme={theme}>
+      {/* ── Top Tactical Command Bar ─────────────────────────────────────────── */}
+      <TacticalCommandBar
+        caseId={selectedDatasetId}
+        onGraphUpdate={handleGraphUpdate}
+        onNotify={notify}
+      />
+
       {/* ── Main Body ────────────────────────────────────────────────────────── */}
       <div className="body">
         {/* ── Left Sidebar (Windows Application Style Boxes) ─────────────────── */}
@@ -920,12 +927,6 @@ export default function App() {
               <ChevronLeft size={13} />
             </button>
           )}
-
-          <TacticalCommandBar
-            caseId={selectedDatasetId}
-            onGraphUpdate={handleGraphUpdate}
-            onNotify={notify}
-          />
 
           <ReactFlowGraph
             ref={canvasRef}
