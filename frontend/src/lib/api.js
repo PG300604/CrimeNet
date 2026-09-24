@@ -188,4 +188,15 @@ export const api = {
     if (!res.ok) throw new Error("Failed to fetch database evidence");
     return await res.json();
   },
+
+  // 16. Google Gemini AI Agent Chat
+  geminiChat: async ({ message, caseId = "CASE-2024-MH-088", history = [], nodes = null, edges = null }) => {
+    const res = await fetch(`${BASE_URL}/gemini/chat`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ message, case_id: caseId, history, nodes, edges }),
+    });
+    if (!res.ok) throw new Error("Gemini chat failed");
+    return await res.json();
+  },
 };

@@ -12,6 +12,7 @@ export default function TacticalCommandBar({
   caseId = "CASE-2024-MH-088",
   onGraphUpdate,
   onNotify,
+  onToggleGeminiChat,
 }) {
   const [prompt, setPrompt] = useState("");
   const [loading, setLoading] = useState(false);
@@ -199,8 +200,8 @@ export default function TacticalCommandBar({
         </button>
       </form>
 
-      {/* Status or Active Case Tag */}
-      <div style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 11, color: "var(--text-muted, #94a3b8)" }}>
+      {/* Gemini AI Chat Trigger & Status */}
+      <div style={{ display: "flex", alignItems: "center", gap: 10, fontSize: 11, color: "var(--text-muted, #94a3b8)" }}>
         {statusText ? (
           <div style={{ display: "flex", alignItems: "center", gap: 5, color: "#3b82f6", fontWeight: 500 }}>
             <Loader2 size={12} className="animate-spin" />
@@ -209,9 +210,32 @@ export default function TacticalCommandBar({
         ) : (
           <div style={{ display: "flex", alignItems: "center", gap: 5 }}>
             <span style={{ width: 7, height: 7, borderRadius: "50%", background: "#10b981" }} />
-            <span>API Online :8000</span>
+            <span>API Online</span>
           </div>
         )}
+
+        <button
+          type="button"
+          onClick={onToggleGeminiChat}
+          style={{
+            display: "inline-flex",
+            alignItems: "center",
+            gap: 6,
+            padding: "6px 12px",
+            borderRadius: 6,
+            border: "1px solid #c7d2fe",
+            background: "linear-gradient(135deg, #4285F4 0%, #9B72CF 50%, #D96570 100%)",
+            color: "#ffffff",
+            fontWeight: 600,
+            fontSize: 12,
+            cursor: "pointer",
+            boxShadow: "0 2px 8px rgba(66, 133, 244, 0.35)",
+            whiteSpace: "nowrap"
+          }}
+        >
+          <Sparkles size={13} />
+          <span>Gemini AI</span>
+        </button>
       </div>
     </header>
   );

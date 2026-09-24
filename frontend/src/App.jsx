@@ -20,6 +20,7 @@ import AddElementModal from "./components/AddElementModal";
 import MergeElementsModal from "./components/MergeElementsModal";
 import DeleteConfirmModal from "./components/DeleteConfirmModal";
 import TacticalCommandBar from "./components/TacticalCommandBar";
+import GeminiChatSidebar from "./components/GeminiChatSidebar";
 
 import { DATASETS_CATALOG, getDatasetById } from "./data/crimeNetDatasets";
 import { degreeMap as buildDegreeMap } from "./lib/graphAnalysis";
@@ -140,6 +141,7 @@ export default function App() {
   // ── Right Sidebar Tabs: NETWORK | ANALYSIS | INTELLIGENCE ───────────────────
   const [activeTab, setActiveTab] = useState("network"); // "network" | "analysis" | "intelligence"
   const [showNodeDetail, setShowNodeDetail] = useState(false);
+  const [isGeminiChatOpen, setIsGeminiChatOpen] = useState(false);
 
   // Findings & Annotations
   const [annotations, setAnnotations] = useState({});
@@ -674,6 +676,22 @@ export default function App() {
         caseId={selectedDatasetId}
         onGraphUpdate={handleGraphUpdate}
         onNotify={notify}
+        onToggleGeminiChat={() => setIsGeminiChatOpen((prev) => !prev)}
+      />
+
+      {/* ── Google Gemini AI Chat Sidebar ──────────────────────────────────── */}
+      <GeminiChatSidebar
+        isOpen={isGeminiChatOpen}
+        onClose={() => setIsGeminiChatOpen(false)}
+        nodes={activeNodes}
+        edges={displayedEdges}
+        caseId={selectedDatasetId}
+        onGraphUpdate={handleGraphUpdate}
+        onSelectNode={(id) => {
+          handleSelect(id);
+          canvasRef.current?.center(id);
+        }}
+        onToast={notify}
       />
 
       {/* ── Main Body ────────────────────────────────────────────────────────── */}

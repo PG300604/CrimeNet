@@ -33,6 +33,7 @@ from .intelligence.network_analytics import default_network_analytics
 from .intelligence.anomaly_detector import default_anomaly_detector
 from .intelligence.node_embeddings import default_embedding_engine
 from .agentic.investigative_workflow import investigative_app
+from .agentic.gemini_agent import default_gemini_agent
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -185,6 +186,14 @@ class AgenticWorkflowRequest(BaseModel):
     case_id: str = "CASE-2024-MH-088"
     query: str
     target_entity: Optional[str] = None
+    nodes: Optional[List[Dict[str, Any]]] = None
+    edges: Optional[List[Dict[str, Any]]] = None
+
+
+class GeminiChatRequest(BaseModel):
+    message: str
+    case_id: str = "CASE-2024-MH-088"
+    history: Optional[List[Dict[str, str]]] = None
     nodes: Optional[List[Dict[str, Any]]] = None
     edges: Optional[List[Dict[str, Any]]] = None
 
@@ -788,6 +797,57 @@ def get_db_cases():
 @app.get("/api/database/evidence/{case_id}")
 def get_db_evidence(case_id: str):
     return default_relational_store.list_evidence(case_id)
+
+
+# 18. Google Gemini AI Agent Chat Endpoint
+@app.post("/api/gemini/chat")
+def gemini_chat(req: GeminiChatRequest):
+    """
+    Real-time interactive chat with CrimeNet Gemini AI Agent.
+    Grounds LLM in operational graph, scikit-learn Isolation Forest, and GraphRAG.
+    Automatically ingests new entities into network graph if suspect narrative is detected.
+    """
+    active_nodes = req.nodes
+    active_edges = req.edges
+    if not active_nodes and req.case_id in case_store.graphs:
+        c_graph = case_store.graphs[req.case_id]
+        active_nodes = [n.to_dict() for n in c_graph["nodes"].values()]
+        active_edges = [e.to_dict() for e in c_graph["edges"]]
+
+    res = default_gemini_agent.chat(
+        message=req.message,
+        case_id=req.case_id,
+        history=req.history,
+        nodes=active_nodes or [],
+        edges=active_edges or []
+    )
+
+    # If new nodes/edges were extracted, update in-memory graph
+    if res.get("newNodes") and req.case_id in case_store.graphs:
+        c_graph = case_store.graphs[req.case_id]
+        for n in res["newNodes"]:
+            nid = n.get("id")
+            if nid and nid not in c_graph["nodes"]:
+                c_graph["nodes"][nid] = GraphNode(
+                    id=str(nid),
+                    label=str(n.get("label", nid)),
+                    type=str(n.get("type", "UNKNOWN")),
+                    threat_level=str(n.get("threat_level", n.get("threatLevel", "HIGH"))),
+                    threat_score=float(n.get("threat_score", n.get("threatScore", 0.75))),
+                    metadata=dict(n.get("metadata", {}))
+                )
+        for e in res.get("newEdges", []):
+            c_graph["edges"].append(GraphEdge(
+                id=str(e.get("id", f"{e.get('source')}->{e.get('target')}")),
+                source=str(e.get("source")),
+                target=str(e.get("target")),
+                type=str(e.get("type", "CONNECTED")),
+                label=str(e.get("label", e.get("type", "CONNECTED"))),
+                amount=e.get("amount"),
+                metadata=dict(e.get("metadata", {}))
+            ))
+
+    return res
 
 
 if __name__ == "__main__":
