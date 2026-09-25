@@ -1609,3 +1609,78 @@ select option,
   color: var(--text) !important;
   background: var(--panel) !important;
 }
+
+/* ── Guaranteed Theme Overrides for Buttons & Tab Panes ──────────────────── */
+.btn-open-original {
+  background: var(--panel-2) !important;
+  border: 1px solid var(--border-2) !important;
+  color: var(--text) !important;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15) !important;
+}
+
+.btn-open-original:hover {
+  background: var(--panel-hover) !important;
+  border-color: var(--teal) !important;
+  color: var(--teal) !important;
+}
+
+.intel-tab-pane {
+  background: var(--panel) !important;
+  color: var(--text) !important;
+}
+
+.crimenet-metric-card {
+  background: var(--panel-2) !important;
+  border: 1px solid var(--border-2) !important;
+  color: var(--text) !important;
+}
+
+.crimenet-metric-card .val {
+  color: var(--text) !important;
+}
+
+.crimenet-metric-card .lbl {
+  color: var(--text-muted) !important;
+}
+
+.intel-subtab-btn {
+  background: var(--panel-2) !important;
+  border: 1px solid var(--border-2) !important;
+  color: var(--text) !important;
+}
+
+.intel-subtab-btn:hover {
+  background: var(--panel-hover) !important;
+  border-color: var(--teal) !important;
+}
+
+.intel-subtab-btn.active {
+  background: var(--teal) !important;
+  color: #ffffff !important;
+  border-color: var(--teal) !important;
+}
+
+.unbound-card {
+  background: var(--panel-2) !important;
+  border: 1px solid var(--border-2) !important;
+  color: var(--text) !important;
+}
+
+.unbound-rank-row {
+  background: var(--panel-2) !important;
+  border: 1px solid var(--border-2) !important;
+  color: var(--text) !important;
+}
+
+.unbound-rank-row:hover {
+  background: var(--panel-hover) !important;
+  border-color: var(--teal) !important;
+}
+
+.unbound-nm {
+  color: var(--text) !important;
+}
+
+.unbound-vl {
+  color: var(--text-muted) !important;
+}
