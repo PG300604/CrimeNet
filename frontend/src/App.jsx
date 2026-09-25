@@ -27,17 +27,20 @@ import { DATASETS_CATALOG, getDatasetById } from "./data/crimeNetDatasets";
 import { degreeMap as buildDegreeMap } from "./lib/graphAnalysis";
 
 import "./styles/App.css";
+import "./styles/futuristic.css";
 
 export default function App() {
   // ── Theme State (Light / Dark) ─────────────────────────────────────────────
   const [theme, setTheme] = useState(() => {
-    return localStorage.getItem("crimenet_theme") || "light";
+    // v2 introduces the dark-first command-center visual system.
+    const savedTheme = localStorage.getItem("crimenet_visual_theme");
+    return savedTheme === "light" ? "light" : "dark";
   });
 
   const toggleTheme = useCallback(() => {
     setTheme((prev) => {
       const next = prev === "light" ? "dark" : "light";
-      localStorage.setItem("crimenet_theme", next);
+      localStorage.setItem("crimenet_visual_theme", next);
       return next;
     });
   }, []);
@@ -45,6 +48,19 @@ export default function App() {
   useEffect(() => {
     document.documentElement.setAttribute("data-theme", theme);
   }, [theme]);
+
+  // Quick search is available from anywhere with the familiar ⌘K / Ctrl+K shortcut.
+  useEffect(() => {
+    const handleShortcut = (event) => {
+      if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === "k") {
+        event.preventDefault();
+        setIsSearchOpen(true);
+      }
+    };
+
+    window.addEventListener("keydown", handleShortcut);
+    return () => window.removeEventListener("keydown", handleShortcut);
+  }, []);
 
   // ── Core Dataset Selection ──────────────────────────────────────────────────
   const [selectedDatasetId, setSelectedDatasetId] = useState("unbound_case_2026");
@@ -122,7 +138,9 @@ export default function App() {
   // ── Move Aside / Sidebar Collapse States ────────────────────────────────────
   const [leftSidebarCollapsed, setLeftSidebarCollapsed] = useState(false);
   const [leftTab, setLeftTab] = useState("gemini"); // "gemini" | "controls"
-  const [rightSidebarCollapsed, setRightSidebarCollapsed] = useState(false);
+  const [rightSidebarCollapsed, setRightSidebarCollapsed] = useState(
+    () => typeof window !== "undefined" && window.innerWidth < 1100
+  );
   const [rightSidebarMaximized, setRightSidebarMaximized] = useState(false);
 
   // ── Left Sidebar Filter Tables (NODES, EDGES, LABELS) ───────────────────────
@@ -687,10 +705,10 @@ export default function App() {
       />
 
       {/* ── Main Body ────────────────────────────────────────────────────────── */}
-      <div className="body">
+      <div className="body" role="main">
         {/* ── Left Sidebar (Gemini AI Chatbot & Control Boxes) ─────────────────── */}
         <div className={`left-sidebar ${leftSidebarCollapsed ? "collapsed" : ""} ${leftTab === "gemini" ? "gemini-mode" : ""}`}>
-          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 6, flexShrink: 0 }}>
+          <div className="left-sidebar-toolbar" style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 6, flexShrink: 0 }}>
             <div style={{ display: "flex", alignItems: "center", gap: 3, background: "var(--bg-2, #f1f5f9)", padding: "2px 4px", borderRadius: 6, border: "1px solid var(--border, #e2e8f0)" }}>
               <button
                 type="button"
@@ -710,6 +728,7 @@ export default function App() {
 
             <button
               className="win-btn"
+              aria-label="Collapse left sidebar"
               onClick={() => setLeftSidebarCollapsed(true)}
               title="Move aside left panel"
             >
@@ -790,6 +809,7 @@ export default function App() {
                           <input
                             type="checkbox"
                             className="mini-checkbox"
+                            aria-label={`Show ${type} entities`}
                             checked={isVisible}
                             onChange={(e) =>
                               setVisibleTypes((prev) => ({ ...prev, [type]: e.target.checked }))
@@ -800,6 +820,7 @@ export default function App() {
                           <input
                             type="checkbox"
                             className="mini-checkbox"
+                            aria-label={`Highlight ${type} entities`}
                             checked={isHighlighted}
                             onChange={(e) =>
                               setHighlightTypes((prev) => ({ ...prev, [type]: e.target.checked }))
@@ -863,6 +884,7 @@ export default function App() {
                           <input
                             type="checkbox"
                             className="mini-checkbox"
+                            aria-label={`Show ${type} relationships`}
                             checked={isVisible}
                             onChange={(e) =>
                               setVisibleEdges((prev) => ({ ...prev, [type]: e.target.checked }))
@@ -873,6 +895,7 @@ export default function App() {
                           <input
                             type="checkbox"
                             className="mini-checkbox"
+                            aria-label={`Highlight ${type} relationships`}
                             checked={isHighlighted}
                             onChange={(e) =>
                               setHighlightEdges((prev) => ({ ...prev, [type]: e.target.checked }))
@@ -927,6 +950,7 @@ export default function App() {
                         <input
                           type="checkbox"
                           className="mini-checkbox"
+                          aria-label={`Show ${v} label`}
                           checked={Boolean(labelSettings[v])}
                           onChange={(e) =>
                             setLabelSettings((prev) => ({ ...prev, [v]: e.target.checked }))
@@ -1037,6 +1061,7 @@ export default function App() {
             <div className="tab-window-actions">
               <button
                 className={`win-btn ${rightSidebarMaximized ? "active" : ""}`}
+                aria-label={rightSidebarMaximized ? "Restore panel width" : "Expand panel width"}
                 title={rightSidebarMaximized ? "Restore panel width" : "Expand panel width"}
                 onClick={() => setRightSidebarMaximized((v) => !v)}
               >
@@ -1044,6 +1069,7 @@ export default function App() {
               </button>
               <button
                 className="win-btn"
+                aria-label="Collapse right dashboard"
                 title="Move aside right dashboard"
                 onClick={() => setRightSidebarCollapsed(true)}
               >
@@ -1062,6 +1088,7 @@ export default function App() {
                   <label className="crimenet-field-label">Select network ...</label>
                   <select
                     className="crimenet-select"
+                    aria-label="Select investigation network"
                     value={selectedDatasetId}
                     onChange={(e) => setSelectedDatasetId(e.target.value)}
                     style={{ fontWeight: 500, cursor: "pointer" }}
@@ -1090,6 +1117,7 @@ export default function App() {
                       <input
                         type="text"
                         className="entity-selector-search"
+                        aria-label="Search entities to scope"
                         placeholder="Search entities to scope..."
                         value={entitySearchFilter}
                         onChange={(e) => setEntitySearchFilter(e.target.value)}
@@ -1137,6 +1165,7 @@ export default function App() {
                             <input
                               type="checkbox"
                               className="mini-checkbox"
+                              aria-label={`Select ${n.label}`}
                               checked={isChecked}
                               readOnly
                             />
@@ -1174,6 +1203,7 @@ export default function App() {
                   <input
                     type="file"
                     ref={fileInputRef}
+                    aria-label="Upload network file"
                     style={{ display: "none" }}
                     accept=".json,.csv,.txt"
                     onChange={handleFileUpload}
@@ -1280,6 +1310,7 @@ export default function App() {
                 onHighlightNHop={handleHighlightNHop}
                 onToast={notify}
                 caseName={currentDataset.name}
+                caseId={selectedDatasetId}
               />
             )}
           </div>
@@ -1308,6 +1339,7 @@ export default function App() {
                 }}
                 onNotify={notify}
                 onHighlightPath={setPathIds}
+                caseId={selectedDatasetId}
               />
             </div>
           )}

@@ -177,7 +177,7 @@ export default function GeminiChatSidebar({
           justifyContent: "space-between",
           padding: "10px 14px",
           borderBottom: "1px solid #e2e8f0",
-          background: "linear-gradient(90deg, #f8fafc 0%, #f1f5f9 100%)",
+          background: "var(--panel-2)",
         }}
       >
         <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
@@ -186,7 +186,7 @@ export default function GeminiChatSidebar({
               width: 32,
               height: 32,
               borderRadius: "50%",
-              background: "linear-gradient(135deg, #4285F4 0%, #9B72CF 50%, #D96570 100%)",
+              background: "var(--panel-3)",
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
@@ -304,7 +304,7 @@ export default function GeminiChatSidebar({
                       width: 26,
                       height: 26,
                       borderRadius: "50%",
-                      background: "linear-gradient(135deg, #4285F4, #9B72CF)",
+                      background: "var(--panel-3)",
                       display: "flex",
                       alignItems: "center",
                       justifyContent: "center",
@@ -433,7 +433,7 @@ export default function GeminiChatSidebar({
                 width: 26,
                 height: 26,
                 borderRadius: "50%",
-                background: "linear-gradient(135deg, #4285F4, #9B72CF)",
+                background: "var(--panel-3)",
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
@@ -554,7 +554,7 @@ export default function GeminiChatSidebar({
               borderRadius: "50%",
               border: "none",
               background: input.trim() && !loading
-                ? "linear-gradient(135deg, #4285F4 0%, #9B72CF 100%)"
+                ? "#4a6558"
                 : "#cbd5e1",
               color: "#ffffff",
               display: "flex",

@@ -26,6 +26,7 @@ class InvestigativeState(TypedDict):
     case_id: str
     query: str
     target_entity: Optional[str]
+    officer_badge: str
     nodes: List[Dict[str, Any]]
     edges: List[Dict[str, Any]]
     extracted_entities: List[Dict[str, Any]]
@@ -135,6 +136,7 @@ def step_synthesize_explainable_intelligence(state: InvestigativeState) -> Dict[
     case_id = state.get("case_id", "CASE-2024-MH-088")
     query = state.get("query", "")
     target = state.get("target_entity", "")
+    officer_badge = state.get("officer_badge", "UNKNOWN")
     nodes = state.get("nodes", [])
     anomalies = state.get("isolation_forest_anomalies", [])
     nx_data = state.get("networkx_metrics", {})
@@ -210,7 +212,7 @@ def step_synthesize_explainable_intelligence(state: InvestigativeState) -> Dict[
     default_audit_ledger.record_action(
         case_id=case_id,
         action="LANGGRAPH_INTELLIGENCE_SYNTHESIS",
-        officer_badge="INSP-4409",
+        officer_badge=officer_badge,
         details={
             "query": query,
             "target": target,

@@ -21,6 +21,7 @@ export default function NodeDetailPanel({
   onSelectNode,
   onNotify,
   onHighlightPath,
+  caseId = "CASE-2024-MH-088",
 }) {
   const [copyFlash, setCopyFlash] = useState(false);
   const [dossier, setDossier] = useState(null);
@@ -40,7 +41,7 @@ export default function NodeDetailPanel({
     setLoadingDossier(true);
     setActionStatus(null);
 
-    api.getEntityDossier(node.id)
+    api.getEntityDossier(node.id, caseId)
       .then((data) => {
         if (isMounted) setDossier(data);
       })
@@ -69,7 +70,7 @@ export default function NodeDetailPanel({
     return () => {
       isMounted = false;
     };
-  }, [node?.id]);
+  }, [node?.id, caseId]);
 
   if (!node) {
     return (
@@ -101,7 +102,7 @@ export default function NodeDetailPanel({
   const handleDispatchAction = async (actionId, title) => {
     try {
       setActionStatus(`Dispatching: ${title}...`);
-      const res = await api.dispatchAction(actionId, node.id);
+      const res = await api.dispatchAction(actionId, node.id, caseId);
       setActionStatus(`Dispatched: ${res.title} (Audit: ${res.auditId || "Logged"})`);
       onNotify?.(`Action Dispatched: ${res.title}`);
     } catch (err) {
@@ -113,7 +114,7 @@ export default function NodeDetailPanel({
   const handleFollowMoney = async () => {
     try {
       setActionStatus("Tracing financial flow 3 hops...");
-      const res = await api.followTheMoney(node.id);
+      const res = await api.followTheMoney(node.id, caseId);
       if (res.highlightedNodeIds && onHighlightPath) {
         onHighlightPath(res.highlightedNodeIds);
       }
@@ -309,9 +310,9 @@ export default function NodeDetailPanel({
           <div className="panel-section">
             <div className="section-title">Connections ({neighbors.length})</div>
             <div style={{ maxHeight: 200, overflowY: "auto" }}>
-              {neighbors.map((nb) => (
+              {neighbors.map((nb, index) => (
                 <div
-                  key={nb.id + nb.edgeLabel}
+                  key={`${nb.id}-${nb.edgeLabel}-${index}`}
                   className="neighbor-item"
                   onClick={() => onSelectNode?.(nb.id)}
                 >

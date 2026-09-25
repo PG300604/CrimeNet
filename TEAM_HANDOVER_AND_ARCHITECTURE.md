@@ -96,6 +96,9 @@ CrimeNet AI is an Explainable Intelligence & Criminal Network Analysis Platform 
 ### Step 1: Environment Variables
 Create a `.env` file in the project root (`p:\CrimeNet\.env`):
 ```env
+CRIMENET_API_KEY=replace_with_a_long_random_api_key
+CRIMENET_OFFICER_BADGES=INSP-4409
+CORS_ORIGINS=http://localhost:5173,http://127.0.0.1:5173
 GEMINI_API_KEY=your_actual_gemini_api_key_here
 GEMINI_MODEL=gemini-2.5-flash
 LLM_PROVIDER=gemini
@@ -103,6 +106,20 @@ OPENAI_API_KEY=
 HOST=127.0.0.1
 PORT=8000
 ```
+
+Every `/api/*` request must include `X-API-Key` and `X-Officer-Badge`.
+For local frontend development, copy the same key and badge into
+`frontend/.env.local`:
+
+```env
+VITE_API_URL=http://127.0.0.1:8000/api
+VITE_CRIMENET_API_KEY=replace_with_the_same_key_as_backend/.env
+VITE_OFFICER_BADGE=INSP-4409
+```
+
+The API key is intended for the basic local access layer. A production
+deployment should use a same-origin gateway or session-based authentication
+instead of exposing a long-lived key in browser JavaScript.
 
 ### Step 2: Start the FastAPI Backend
 ```powershell

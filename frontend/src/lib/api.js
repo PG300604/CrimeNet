@@ -1,16 +1,86 @@
 /**
- * api.js — CrimeNet AI Backend REST Client
- * Connects the React frontend to the FastAPI RAG & Agentic backend.
+ * api.js — authenticated CrimeNet REST client.
+ *
+ * The browser client sends the two headers required by the FastAPI gateway:
+ *   X-API-Key and X-Officer-Badge
+ *
+ * For local development, values come from Vite environment variables. A
+ * production deployment should preferably terminate authentication at a
+ * same-origin gateway rather than expose a long-lived key in browser JavaScript.
  */
 
-const BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:8000/api";
+const defaultApiUrl = import.meta.env.DEV ? "http://127.0.0.1:8000/api" : "/api";
+const configuredApiUrl = import.meta.env.VITE_API_URL || defaultApiUrl;
+const API_URL = configuredApiUrl.replace(/\/+$/, "");
+const API_ROOT = import.meta.env.VITE_API_ROOT || API_URL.replace(/\/api$/, "");
+const configuredApiKey =
+  import.meta.env.VITE_CRIMENET_API_KEY || import.meta.env.VITE_API_KEY || "";
+const configuredOfficerBadge = import.meta.env.VITE_OFFICER_BADGE || "INSP-4409";
+
+function readSessionValue(key) {
+  if (typeof window === "undefined") return "";
+  try {
+    return window.sessionStorage.getItem(key) || "";
+  } catch {
+    return "";
+  }
+}
+
+function getApiKey() {
+  return readSessionValue("crimenet_api_key") || configuredApiKey;
+}
+
+function getOfficerBadge() {
+  return readSessionValue("crimenet_officer_badge") || configuredOfficerBadge;
+}
+
+function authHeaders(extraHeaders = {}) {
+  const headers = { ...extraHeaders };
+  const apiKey = getApiKey();
+  if (apiKey) headers["X-API-Key"] = apiKey;
+  headers["X-Officer-Badge"] = getOfficerBadge();
+  return headers;
+}
+
+async function responseError(response) {
+  try {
+    const payload = await response.json();
+    return payload.detail || payload.message || `Request failed (${response.status})`;
+  } catch {
+    return `Request failed (${response.status})`;
+  }
+}
+
+async function request(path, options = {}) {
+  if (!getApiKey()) {
+    throw new Error(
+      "CrimeNet API key is not configured. Set VITE_CRIMENET_API_KEY in frontend/.env.local.",
+    );
+  }
+
+  const response = await fetch(`${API_URL}${path}`, {
+    ...options,
+    headers: authHeaders(options.headers),
+  });
+
+  if (!response.ok) {
+    const error = new Error(await responseError(response));
+    error.status = response.status;
+    throw error;
+  }
+
+  if (response.status === 204) return null;
+  return response.json();
+}
 
 export const api = {
-  // Check health
+  // Public health check (the root endpoint does not expose case data).
   checkHealth: async () => {
     try {
-      const res = await fetch("http://localhost:8000/");
-      return await res.json();
+      const healthUrl = API_ROOT ? `${API_ROOT}/health` : "/health";
+      const response = await fetch(healthUrl, { headers: authHeaders() });
+      if (!response.ok) return null;
+      return await response.json();
     } catch (err) {
       console.warn("Backend not reachable:", err);
       return null;
@@ -18,185 +88,168 @@ export const api = {
   },
 
   // 1. Cases
-  getCases: async () => {
-    const res = await fetch(`${BASE_URL}/cases`);
-    if (!res.ok) throw new Error("Failed to fetch cases");
-    return await res.json();
-  },
+  getCases: async () => request("/cases"),
 
-  createCase: async (caseData) => {
-    const res = await fetch(`${BASE_URL}/cases`, {
+  createCase: async (caseData) =>
+    request("/cases", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(caseData),
-    });
-    if (!res.ok) throw new Error("Failed to create case");
-    return await res.json();
-  },
+      body: JSON.stringify({
+        ...caseData,
+        officer_badge: getOfficerBadge(),
+      }),
+    }),
 
   // 2. Graph
-  getGraph: async (caseId) => {
-    const res = await fetch(`${BASE_URL}/graph/${caseId}`);
-    if (!res.ok) throw new Error("Failed to fetch graph");
-    return await res.json();
-  },
+  getGraph: async (caseId) => request(`/graph/${encodeURIComponent(caseId)}`),
 
-  // 3. Narrative Ingestion (Text-to-Graph)
-  submitNarrative: async (narrative, caseId = "CASE-2024-MH-088") => {
-    const res = await fetch(`${BASE_URL}/investigate/narrative`, {
+  // 3. Narrative ingestion
+  submitNarrative: async (narrative, caseId = "CASE-2024-MH-088") =>
+    request("/investigate/narrative", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ narrative, case_id: caseId }),
-    });
-    if (!res.ok) throw new Error("Failed to process narrative");
-    return await res.json();
-  },
+      body: JSON.stringify({
+        narrative,
+        case_id: caseId,
+        officer_badge: getOfficerBadge(),
+      }),
+    }),
 
-  // 4. Evidence File Upload (RAG)
+  // 4. Evidence upload
   uploadEvidence: async (file, caseId = "CASE-2024-MH-088") => {
     const formData = new FormData();
     formData.append("file", file);
     formData.append("case_id", caseId);
-    formData.append("officer_badge", "INSP-4409");
+    formData.append("officer_badge", getOfficerBadge());
 
-    const res = await fetch(`${BASE_URL}/investigate/upload`, {
+    return request("/investigate/upload", {
       method: "POST",
       body: formData,
     });
-    if (!res.ok) throw new Error("Failed to upload evidence");
-    return await res.json();
   },
 
-  // 5. Entity Dossier (Agentic Synthesis + Citations)
-  getEntityDossier: async (nodeId, caseId = "CASE-2024-MH-088") => {
-    const res = await fetch(`${BASE_URL}/entity/${encodeURIComponent(nodeId)}/dossier?case_id=${encodeURIComponent(caseId)}`);
-    if (!res.ok) throw new Error("Failed to generate dossier");
-    return await res.json();
-  },
+  // 5. Entity dossier
+  getEntityDossier: async (nodeId, caseId = "CASE-2024-MH-088") =>
+    request(
+      `/entity/${encodeURIComponent(nodeId)}/dossier?case_id=${encodeURIComponent(caseId)}`,
+    ),
 
-  // 6. Follow the Money (3-hop BFS)
-  followTheMoney: async (seedNodeId, caseId = "CASE-2024-MH-088", maxHops = 3) => {
-    const res = await fetch(`${BASE_URL}/analytics/follow-money`, {
+  // 6. Follow the Money
+  followTheMoney: async (seedNodeId, caseId = "CASE-2024-MH-088", maxHops = 3) =>
+    request("/analytics/follow-money", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ seed_node_id: seedNodeId, case_id: caseId, max_hops: maxHops }),
-    });
-    if (!res.ok) throw new Error("Failed to trace financial flow");
-    return await res.json();
-  },
+      body: JSON.stringify({
+        seed_node_id: seedNodeId,
+        case_id: caseId,
+        max_hops: maxHops,
+      }),
+    }),
 
-  // 7. Human-in-the-Loop Feedback (@feedback)
-  submitFeedback: async (feedbackPrompt, caseId = "CASE-2024-MH-088") => {
-    const res = await fetch(`${BASE_URL}/feedback`, {
+  // 7. Human-in-the-loop feedback
+  submitFeedback: async (feedbackPrompt, caseId = "CASE-2024-MH-088") =>
+    request("/feedback", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ feedback_prompt: feedbackPrompt, case_id: caseId }),
-    });
-    if (!res.ok) throw new Error("Failed to submit feedback");
-    return await res.json();
-  },
+      body: JSON.stringify({
+        feedback_prompt: feedbackPrompt,
+        case_id: caseId,
+        officer_badge: getOfficerBadge(),
+      }),
+    }),
 
-  // 8. Action Dispatch (LOC, Freeze Account, Summons)
-  dispatchAction: async (actionId, entityId, caseId = "CASE-2024-MH-088", parameters = {}) => {
-    const res = await fetch(`${BASE_URL}/actions/dispatch`, {
+  // 8. Action dispatch
+  dispatchAction: async (actionId, entityId, caseId = "CASE-2024-MH-088", parameters = {}) =>
+    request("/actions/dispatch", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         action_id: actionId,
         entity_id: entityId,
         case_id: caseId,
+        officer_badge: getOfficerBadge(),
         parameters,
       }),
-    });
-    if (!res.ok) throw new Error("Failed to dispatch action");
-    return await res.json();
-  },
+    }),
 
-  // 9. Timeline & Alerts
-  getTimeline: async (caseId = "CASE-2024-MH-088") => {
-    const res = await fetch(`${BASE_URL}/cases/${caseId}/timeline`);
-    if (!res.ok) throw new Error("Failed to fetch timeline");
-    return await res.json();
-  },
+  // 9. Timeline and alerts
+  getTimeline: async (caseId = "CASE-2024-MH-088") =>
+    request(`/cases/${encodeURIComponent(caseId)}/timeline`),
 
-  getAlerts: async (caseId = "CASE-2024-MH-088") => {
-    const res = await fetch(`${BASE_URL}/alerts?case_id=${caseId}`);
-    if (!res.ok) throw new Error("Failed to fetch alerts");
-    return await res.json();
-  },
+  getAlerts: async (caseId = "CASE-2024-MH-088") =>
+    request(`/alerts?case_id=${encodeURIComponent(caseId)}`),
 
-  // 10. Prosecutor Report
-  getProsecutorReport: async (caseId = "CASE-2024-MH-088") => {
-    const res = await fetch(`${BASE_URL}/cases/${caseId}/report`);
-    if (!res.ok) throw new Error("Failed to generate report");
-    return await res.json();
-  },
+  // 10. Prosecutor report
+  getProsecutorReport: async (caseId = "CASE-2024-MH-088") =>
+    request(`/cases/${encodeURIComponent(caseId)}/report`),
 
-  // 11. Python Graph Analytics (NetworkX, scikit-learn, Embeddings)
-  runPythonAnalysis: async ({ nodes, edges, functionId, algoId }) => {
-    const res = await fetch(`${BASE_URL}/intelligence/analyze`, {
+  // 11. Python graph analytics
+  runPythonAnalysis: async ({ nodes, edges, functionId, algoId }) =>
+    request("/intelligence/analyze", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ nodes, edges, functionId, algoId }),
-    });
-    if (!res.ok) throw new Error(`Analysis failed (${res.status})`);
-    return await res.json();
-  },
+    }),
 
-  // 12. scikit-learn Isolation Forest Anomaly Detection
-  getAnomalies: async ({ nodes, edges }) => {
-    const res = await fetch(`${BASE_URL}/intelligence/anomalies`, {
+  // 12. Isolation Forest anomalies
+  getAnomalies: async ({ nodes, edges }) =>
+    request("/intelligence/anomalies", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ nodes, edges }),
-    });
-    if (!res.ok) throw new Error("Failed to compute anomaly detections");
-    return await res.json();
-  },
+    }),
 
-  // 13. GraphRAG Knowledge Query
-  queryGraphRAG: async (caseId, query, topK = 5) => {
-    const res = await fetch(`${BASE_URL}/intelligence/graphrag/query`, {
+  // 13. GraphRAG query
+  queryGraphRAG: async (caseId, query, topK = 5) =>
+    request("/intelligence/graphrag/query", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ case_id: caseId, query, top_k: topK }),
-    });
-    if (!res.ok) throw new Error("Failed to query GraphRAG");
-    return await res.json();
-  },
+    }),
 
-  // 14. LangGraph Investigative Workflow
-  runAgenticWorkflow: async ({ caseId = "CASE-2024-MH-088", query, targetEntity = null, nodes = null, edges = null }) => {
-    const res = await fetch(`${BASE_URL}/intelligence/investigate`, {
+  // 14. LangGraph workflow
+  runAgenticWorkflow: async ({
+    caseId = "CASE-2024-MH-088",
+    query,
+    targetEntity = null,
+    nodes = null,
+    edges = null,
+  }) =>
+    request("/intelligence/investigate", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ case_id: caseId, query, target_entity: targetEntity, nodes, edges }),
-    });
-    if (!res.ok) throw new Error("LangGraph investigative workflow failed");
-    return await res.json();
-  },
+      body: JSON.stringify({
+        case_id: caseId,
+        query,
+        target_entity: targetEntity,
+        nodes,
+        edges,
+      }),
+    }),
 
-  // 15. Relational Store
-  getDbCases: async () => {
-    const res = await fetch(`${BASE_URL}/database/cases`);
-    if (!res.ok) throw new Error("Failed to fetch database cases");
-    return await res.json();
-  },
+  // 15. Relational store
+  getDbCases: async () => request("/database/cases"),
 
-  getDbEvidence: async (caseId) => {
-    const res = await fetch(`${BASE_URL}/database/evidence/${caseId}`);
-    if (!res.ok) throw new Error("Failed to fetch database evidence");
-    return await res.json();
-  },
+  getDbEvidence: async (caseId) =>
+    request(`/database/evidence/${encodeURIComponent(caseId)}`),
 
-  // 16. Google Gemini AI Agent Chat
-  geminiChat: async ({ message, caseId = "CASE-2024-MH-088", history = [], nodes = null, edges = null }) => {
-    const res = await fetch(`${BASE_URL}/gemini/chat`, {
+  // 16. Investigative copilot
+  geminiChat: async ({
+    message,
+    caseId = "CASE-2024-MH-088",
+    history = [],
+    nodes = null,
+    edges = null,
+  }) =>
+    request("/gemini/chat", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ message, case_id: caseId, history, nodes, edges }),
-    });
-    if (!res.ok) throw new Error("Gemini chat failed");
-    return await res.json();
-  },
+      body: JSON.stringify({
+        message,
+        case_id: caseId,
+        history,
+        nodes,
+        edges,
+      }),
+    }),
 };

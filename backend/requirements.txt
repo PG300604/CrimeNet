@@ -5,5 +5,7 @@ pypdf>=4.0.0
 python-multipart>=0.0.9
 scikit-learn
 numpy
-scipy
-pandas
+httpx>=0.27.0
+langgraph>=0.2.0
+networkx>=3.0
+

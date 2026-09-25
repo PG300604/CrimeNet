@@ -12,7 +12,7 @@ import logging
 from typing import List, Dict, Any, Optional
 import httpx
 
-from ..config import GEMINI_API_KEY, GEMINI_MODEL
+from ..config import GEMINI_API_KEY, GEMINI_MODEL, LLM_PROVIDER
 from ..storage.graph_rag import default_graph_rag
 from ..intelligence.network_analytics import default_network_analytics
 from ..intelligence.anomaly_detector import default_anomaly_detector
@@ -38,9 +38,21 @@ class GeminiInvestigativeAgent:
     def __init__(self, api_key: Optional[str] = None):
         self.api_key = api_key or os.getenv("GEMINI_API_KEY", "") or GEMINI_API_KEY
         self.model = GEMINI_MODEL
+        self.provider = os.getenv("LLM_PROVIDER", LLM_PROVIDER).strip().lower()
 
     def is_configured(self) -> bool:
-        return bool(self.api_key and len(self.api_key.strip()) > 10)
+        """Return whether a real Gemini request should be attempted.
+
+        Offline mode and the placeholder key shipped in ``.env.example`` must
+        use the deterministic local fallback instead of making a network call.
+        """
+        provider = os.getenv("LLM_PROVIDER", self.provider).strip().lower()
+        key = (self.api_key or "").strip()
+        placeholder_keys = {
+            "your_gemini_api_key_here",
+            "your_actual_gemini_api_key_here",
+        }
+        return provider != "offline" and bool(key) and key.lower() not in placeholder_keys
 
     def _call_gemini_api(self, prompt: str, system_prompt: str = INVESTIGATIVE_SYSTEM_PROMPT) -> Optional[str]:
         """Calls Google Gemini 2.5 Flash API via httpx."""

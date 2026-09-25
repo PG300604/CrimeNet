@@ -6,6 +6,7 @@ import pytest
 from starlette.testclient import TestClient
 
 from backend.main import app
+from backend.config import CRIMENET_API_KEY
 from backend.extraction.indian_regex import IndianRegexExtractor
 from backend.extraction.ner_extractor import NarrativeExtractor
 from backend.rag.document_loader import DocumentLoader
@@ -17,7 +18,13 @@ from backend.agents.feedback_agent import FeedbackAgent
 
 @pytest.fixture
 def client():
-    return TestClient(app)
+    return TestClient(
+        app,
+        headers={
+            "X-API-Key": CRIMENET_API_KEY,
+            "X-Officer-Badge": "INSP-4409",
+        },
+    )
 
 
 def test_indian_regex_phone():

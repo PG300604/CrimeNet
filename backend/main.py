@@ -11,11 +11,15 @@ from typing import List, Dict, Any, Optional
 from pathlib import Path
 from datetime import datetime
 
-from fastapi import FastAPI, UploadFile, File, Form, HTTPException, Query
+from fastapi import FastAPI, UploadFile, File, Form, HTTPException, Query, Request
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.openapi.utils import get_openapi
+from fastapi.responses import FileResponse
+from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
 
-from .config import UPLOADS_DIR, CORS_ORIGINS, HOST, PORT
+from .config import BASE_DIR, UPLOADS_DIR, CORS_ORIGINS, HOST, PORT
+from .security import api_access_middleware, require_matching_badge
 from .rag.document_loader import DocumentLoader
 from .rag.chunker import DocumentChunker
 from .rag.vector_store import default_vector_store
@@ -45,13 +49,66 @@ app = FastAPI(
     version="1.0.0"
 )
 
-# Enable CORS for React frontend (Vite port 5173, etc.)
+# When the frontend is built, the same FastAPI process can serve the React
+# bundle. This keeps the Render prototype to one web service.
+FRONTEND_DIST = BASE_DIR / "frontend" / "dist"
+
+
+def custom_openapi():
+    """Document both required headers so Swagger UI has an Authorize button."""
+    if app.openapi_schema:
+        return app.openapi_schema
+
+    schema = get_openapi(
+        title=app.title,
+        version=app.version,
+        description=app.description,
+        routes=app.routes,
+    )
+    schema.setdefault("components", {})["securitySchemes"] = {
+        "ApiKeyAuth": {
+            "type": "apiKey",
+            "in": "header",
+            "name": "X-API-Key",
+        },
+        "OfficerBadge": {
+            "type": "apiKey",
+            "in": "header",
+            "name": "X-Officer-Badge",
+        },
+    }
+
+    for path, path_item in schema.get("paths", {}).items():
+        if not path.startswith("/api/"):
+            continue
+        for operation in path_item.values():
+            if isinstance(operation, dict):
+                operation["security"] = [
+                    {"ApiKeyAuth": [], "OfficerBadge": []}
+                ]
+
+    app.openapi_schema = schema
+    return app.openapi_schema
+
+
+app.openapi = custom_openapi
+
+# Authenticate API requests before route handlers run. CORS is added after the
+# auth middleware so preflight requests and auth errors still receive the
+# correct browser CORS headers.
+@app.middleware("http")
+async def enforce_api_access(request: Request, call_next):
+    return await api_access_middleware(request, call_next)
+
+
+# Only explicitly configured local origins are accepted. Never use a wildcard
+# origin together with credentialed browser requests.
 app.add_middleware(
     CORSMiddleware,
     allow_origins=CORS_ORIGINS,
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
+    allow_credentials=False,
+    allow_methods=["GET", "POST", "OPTIONS"],
+    allow_headers=["Accept", "Content-Type", "X-API-Key", "X-Officer-Badge"],
 )
 
 
@@ -133,20 +190,20 @@ chunker = DocumentChunker()
 class NarrativeRequest(BaseModel):
     case_id: str = "CASE-2024-MH-088"
     narrative: str
-    officer_badge: str = "INSP-4409"
+    officer_badge: Optional[str] = None
 
 
 class FeedbackRequest(BaseModel):
     case_id: str = "CASE-2024-MH-088"
     feedback_prompt: str
-    officer_badge: str = "INSP-4409"
+    officer_badge: Optional[str] = None
 
 
 class ActionDispatchRequest(BaseModel):
     action_id: str
     entity_id: str
     case_id: str = "CASE-2024-MH-088"
-    officer_badge: str = "INSP-4409"
+    officer_badge: Optional[str] = None
     parameters: Dict[str, Any] = Field(default_factory=dict)
 
 
@@ -161,6 +218,7 @@ class NewCaseRequest(BaseModel):
     type: str
     police_station: str
     officer: str
+    officer_badge: Optional[str] = None
     initial_facts: Optional[str] = None
 
 
@@ -202,14 +260,28 @@ class GeminiChatRequest(BaseModel):
 # API Routes
 # --------------------------------------------------------------------------- #
 
-@app.get("/")
-def health_check():
+def _health_payload():
     return {
         "status": "online",
         "service": "CrimeNet AI Unified API",
         "version": "1.0.0",
         "jurisdiction": "Indian Law Enforcement Edition"
     }
+
+
+@app.get("/health")
+def health_check():
+    """Public liveness endpoint for Render and local monitoring."""
+    return _health_payload()
+
+
+@app.get("/")
+def root_check():
+    """Serve the built React prototype at the service root when available."""
+    index_file = FRONTEND_DIST / "index.html"
+    if index_file.exists():
+        return FileResponse(index_file)
+    return _health_payload()
 
 
 # 1. Cases Endpoints
@@ -219,7 +291,8 @@ def list_cases():
 
 
 @app.post("/api/cases")
-def create_case(req: NewCaseRequest):
+def create_case(req: NewCaseRequest, request: Request):
+    officer_badge = require_matching_badge(request, req.officer_badge)
     cid = f"CASE-{len(case_store.cases) + 1:03d}"
     new_case = {
         "id": cid,
@@ -238,7 +311,7 @@ def create_case(req: NewCaseRequest):
     default_audit_ledger.record_action(
         action="REGISTER_CASE",
         case_id=cid,
-        officer_badge=req.officer,
+        officer_badge=officer_badge,
         details={"title": req.title, "type": req.type}
     )
 
@@ -267,7 +340,8 @@ def get_graph(case_id: str):
 
 # 3. Narrative Ingestion Endpoint (Text-to-Graph)
 @app.post("/api/investigate/narrative")
-def investigate_narrative(req: NarrativeRequest):
+def investigate_narrative(req: NarrativeRequest, request: Request):
+    officer_badge = require_matching_badge(request, req.officer_badge)
     if req.case_id not in case_store.graphs:
         case_store.graphs[req.case_id] = {"nodes": {}, "edges": []}
 
@@ -295,7 +369,7 @@ def investigate_narrative(req: NarrativeRequest):
     default_audit_ledger.record_action(
         action="NARRATIVE_INGESTION",
         case_id=req.case_id,
-        officer_badge=req.officer_badge,
+        officer_badge=officer_badge,
         details={
             "raw_length": len(req.narrative),
             "extracted_nodes": len(result.nodes),
@@ -318,10 +392,12 @@ def investigate_narrative(req: NarrativeRequest):
 # 4. Evidence Document Upload Endpoint (RAG Ingestion)
 @app.post("/api/investigate/upload")
 async def upload_evidence(
+    request: Request,
     case_id: str = Form("CASE-2024-MH-088"),
-    officer_badge: str = Form("INSP-4409"),
+    officer_badge: Optional[str] = Form(None),
     file: UploadFile = File(...)
 ):
+    authenticated_badge = require_matching_badge(request, officer_badge)
     upload_path = UPLOADS_DIR / f"{case_id}_{file.filename}"
     with open(upload_path, "wb") as buffer:
         shutil.copyfileobj(file.file, buffer)
@@ -370,7 +446,7 @@ async def upload_evidence(
     default_audit_ledger.record_action(
         action="DOCUMENT_UPLOAD",
         case_id=case_id,
-        officer_badge=officer_badge,
+        officer_badge=authenticated_badge,
         details={
             "filename": file.filename,
             "chunks_indexed": added_count,
@@ -391,7 +467,7 @@ async def upload_evidence(
 
 
 # 5. Entity Dossier Endpoint (Agentic Synthesis with RAG Citations)
-@app.get("/api/entity/{node_id}/dossier")
+@app.get("/api/entity/{node_id:path}/dossier")
 def get_entity_dossier(node_id: str, case_id: str = Query("CASE-2024-MH-088")):
     if case_id not in case_store.graphs:
         case_store.graphs[case_id] = {"nodes": {}, "edges": []}
@@ -466,7 +542,8 @@ def follow_the_money(req: FollowMoneyRequest):
 
 # 7. Human-in-the-Loop @feedback Endpoint
 @app.post("/api/feedback")
-def submit_feedback(req: FeedbackRequest):
+def submit_feedback(req: FeedbackRequest, request: Request):
+    officer_badge = require_matching_badge(request, req.officer_badge)
     if req.case_id not in case_store.graphs:
         raise HTTPException(status_code=404, detail="Case not found")
 
@@ -476,7 +553,7 @@ def submit_feedback(req: FeedbackRequest):
         nodes_dict=c_graph["nodes"],
         edges=c_graph["edges"],
         case_id=req.case_id,
-        officer_badge=req.officer_badge
+        officer_badge=officer_badge
     )
     return res.to_dict()
 
@@ -520,11 +597,12 @@ def get_threat_alerts(case_id: str = Query("CASE-2024-MH-088")):
 
 # 9. Action Dispatch Endpoint (LOC, Freeze Account, Summons)
 @app.post("/api/actions/dispatch")
-def dispatch_action(req: ActionDispatchRequest):
+def dispatch_action(req: ActionDispatchRequest, request: Request):
+    officer_badge = require_matching_badge(request, req.officer_badge)
     entry = default_audit_ledger.record_action(
         action=f"ACTION_{req.action_id}",
         case_id=req.case_id,
-        officer_badge=req.officer_badge,
+        officer_badge=officer_badge,
         target_entity=req.entity_id,
         details={"parameters": req.parameters}
     )
@@ -713,11 +791,13 @@ def query_graph_rag(req: GraphRAGRequest):
 
 # 16. LangGraph Agentic Investigative Workflow
 @app.post("/api/intelligence/investigate")
-def run_investigative_workflow(req: AgenticWorkflowRequest):
+def run_investigative_workflow(req: AgenticWorkflowRequest, request: Request):
     """
     Runs the complete LangGraph StateGraph pipeline:
     Extract/Ingest -> GraphRAG -> NetworkX/scikit-learn Intelligence -> LLM Explainable Synthesis.
     """
+    officer_badge = require_matching_badge(request, None)
+
     # Grab nodes/edges from active case or request payload
     active_nodes = req.nodes
     active_edges = req.edges
@@ -730,6 +810,7 @@ def run_investigative_workflow(req: AgenticWorkflowRequest):
         "case_id": req.case_id,
         "query": req.query,
         "target_entity": req.target_entity,
+        "officer_badge": officer_badge,
         "nodes": active_nodes or [],
         "edges": active_edges or [],
         "extracted_entities": [],
@@ -848,6 +929,30 @@ def gemini_chat(req: GeminiChatRequest):
             ))
 
     return res
+
+
+# Serve the React build from the same process when frontend/dist exists.
+# Unknown non-API paths fall back to index.html for client-side navigation.
+if FRONTEND_DIST.exists():
+    assets_dir = FRONTEND_DIST / "assets"
+    if assets_dir.exists():
+        app.mount("/assets", StaticFiles(directory=assets_dir), name="frontend-assets")
+
+    @app.get("/{full_path:path}", include_in_schema=False)
+    async def serve_frontend(full_path: str):
+        if full_path == "api" or full_path.startswith("api/"):
+            raise HTTPException(status_code=404, detail="API route not found")
+
+        root = FRONTEND_DIST.resolve()
+        candidate = (FRONTEND_DIST / full_path).resolve()
+        try:
+            candidate.relative_to(root)
+        except ValueError:
+            raise HTTPException(status_code=404, detail="File not found")
+
+        if candidate.is_file():
+            return FileResponse(candidate)
+        return FileResponse(FRONTEND_DIST / "index.html")
 
 
 if __name__ == "__main__":

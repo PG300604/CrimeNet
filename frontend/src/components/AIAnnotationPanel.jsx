@@ -29,6 +29,7 @@ export default function AIAnnotationPanel({
   onHighlightNHop,
   onToast,
   caseName = "Active Case",
+  caseId = "CASE-2024-MH-088",
 }) {
   const [activeSubtab, setActiveSubtab] = useState("insights"); // "insights" | "hidden" | "anomalies" | "nhop" | "timeline"
   const [searchQuery, setSearchQuery] = useState("");
@@ -60,7 +61,7 @@ export default function AIAnnotationPanel({
     setLangGraphLoading(true);
     try {
       const res = await api.runAgenticWorkflow({
-        caseId: caseName || "CASE-2024-MH-088",
+        caseId: caseId || caseName || "CASE-2024-MH-088",
         query: `Analyze criminal syndicate structure, identify key brokers, and prescribe police action for ${nodes.length} entities.`,
         nodes,
         edges,
@@ -587,7 +588,7 @@ export default function AIAnnotationPanel({
                 padding: "8px 12px",
                 borderRadius: 6,
                 border: "none",
-                background: "linear-gradient(135deg, #4f46e5, #7c3aed)",
+                background: "#3b5549",
                 color: "#ffffff",
                 fontWeight: 600,
                 fontSize: 12,
@@ -605,7 +606,7 @@ export default function AIAnnotationPanel({
 
             {langGraphBrief && (
               <div className="unbound-card" style={{ marginBottom: 12, border: "1px solid #c7d2fe", background: "#f5f3ff", padding: 10 }}>
-                <div style={{ display: "flex", alignItems: "center", gap: 6, color: "#4f46e5", fontWeight: 700, fontSize: 12, marginBottom: 6 }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 6, color: "var(--teal)", fontWeight: 700, fontSize: 12, marginBottom: 6 }}>
                   <ShieldCheck size={14} />
                   LangGraph Explainable Intelligence Dossier
                 </div>

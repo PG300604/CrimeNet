@@ -28,20 +28,20 @@ import "@xyflow/react/dist/style.css";
 
 // ─── Color Maps ───────────────────────────────────────────────────────────────
 export const TYPE_COLOR = {
-  person:       "#54b399", // Reference sage-teal
-  location:     "#f59e0b",
-  object:       "#8b5cf6",
-  vehicle:      "#8b5cf6",
-  event:        "#3b82f6",
-  domain:       "#f97316",
-  ip:           "#10b7a6",
-  email:        "#ec4899",
-  org:          "#a855f7",
-  organization: "#a855f7",
-  phone:        "#06b6d4",
-  account:      "#10b981",
-  upi:          "#10b981",
-  bank:         "#10b981",
+  person:       "#78998b",
+  location:     "#a69470",
+  object:       "#938b9b",
+  vehicle:      "#82949a",
+  event:        "#879c94",
+  domain:       "#a38a6e",
+  ip:           "#7d9f98",
+  email:        "#a08b96",
+  org:          "#88978b",
+  organization: "#88978b",
+  phone:        "#819ba0",
+  account:      "#78a589",
+  upi:          "#78a589",
+  bank:         "#78a589",
 };
 
 export const TYPE_ICON = {
@@ -63,8 +63,8 @@ export const TYPE_ICON = {
 };
 
 export const COMMUNITY_PALETTE = [
-  "#54b399", "#3b82f6", "#f97316", "#8b5cf6",
-  "#ec4899", "#10b7a6", "#f59e0b", "#06b6d4",
+  "#78998b", "#819ba0", "#a69470", "#938b9b",
+  "#a08b96", "#7d9f98", "#a38a6e", "#88978b",
 ];
 
 // Node geometry
@@ -88,14 +88,14 @@ function applyDagre(nodes, edges, rankdir = "LR") {
 
 // ─── Custom Circular Node with SVG Icon ───────────────────────────────────────
 function CleanCircularNode({ data = {}, selected }) {
-  const hex = data?.hexColor || "#54b399";
+  const hex = data?.hexColor || "#78998b";
   const isSelected = selected || data?.isSelected;
   const isNeighbor = data?.isNeighbor;
   const isDimmed = data?.isDimmed && !isSelected && !isNeighbor;
   const isPath = data?.isPath;
   const isDark = data?.theme === "dark";
 
-  const ringColor = isSelected ? (isDark ? "#60a5fa" : "#2563eb") : isPath ? "#f97316" : isNeighbor ? "#54b399" : "transparent";
+  const ringColor = isSelected ? (isDark ? "#9ac6ab" : "#4b8b6a") : isPath ? "#69d49c" : isNeighbor ? "#78998b" : "transparent";
   const ringW = (isSelected || isPath) ? 4 : isNeighbor ? 3 : 0;
 
   const nodeType = (data?.type || "").toLowerCase();
@@ -115,12 +115,13 @@ function CleanCircularNode({ data = {}, selected }) {
     >
       {/* Circle Node with Type SVG Icon */}
       <div
+        className={`crimenet-node-shell ${isSelected ? "is-selected" : ""} ${isPath ? "is-path" : ""} ${isNeighbor ? "is-neighbor" : ""}`}
         style={{
           width: CIRCLE,
           height: CIRCLE,
           borderRadius: "50%",
-          background: isSelected ? (isDark ? "#3b82f6" : "#2563eb") : hex,
-          border: isSelected ? "2.5px solid #1d4ed8" : "none",
+          background: isSelected ? (isDark ? "#4e7561" : "#6c9b80") : hex,
+          border: isSelected ? "1px solid #9ac6ab" : "1px solid rgba(220, 230, 224, 0.12)",
           display: "flex",
           alignItems: "center",
           justifyContent: "center",
@@ -518,9 +519,9 @@ const ReactFlowInner = forwardRef(function ReactFlowInner(
       const onPath = pathIds && pathSet.has(e.source) && pathSet.has(e.target);
       const isDimmed = hasAnySelection && !isThisEdgeSelected && !connectsSelected && !onPath;
 
-      const highlightColor = theme === "dark" ? "#60a5fa" : "#2563eb";
-      const defaultColor = theme === "dark" ? "#64748b" : "#94a3b8";
-      const edgeColor = onPath ? "#f97316" : (isThisEdgeSelected || connectsSelected) ? highlightColor : defaultColor;
+      const highlightColor = theme === "dark" ? "#9ac6ab" : "#4b8b6a";
+      const defaultColor = theme === "dark" ? "#66736d" : "#9aa8a0";
+      const edgeColor = onPath ? "#69d49c" : (isThisEdgeSelected || connectsSelected) ? highlightColor : defaultColor;
 
       return {
         id: edgeKey,
@@ -541,13 +542,13 @@ const ReactFlowInner = forwardRef(function ReactFlowInner(
         style: {
           stroke: edgeColor,
           strokeWidth: isThisEdgeSelected ? 3 : onPath ? 2.2 : connectsSelected ? 1.8 : 1.2,
-          opacity: isDimmed ? 0.08 : onPath ? 1 : (isThisEdgeSelected || connectsSelected) ? 1 : (theme === "dark" ? 0.75 : 0.65),
+          opacity: isDimmed ? 0.08 : onPath ? 0.95 : (isThisEdgeSelected || connectsSelected) ? 0.9 : (theme === "dark" ? 0.62 : 0.58),
           filter: isThisEdgeSelected
-            ? `drop-shadow(0 0 6px ${theme === "dark" ? "rgba(96, 165, 250, 0.9)" : "rgba(37, 99, 235, 0.7)"})`
+            ? `drop-shadow(0 0 3px ${theme === "dark" ? "rgba(105, 212, 156, 0.35)" : "rgba(75, 139, 106, 0.25)"})`
             : undefined,
         },
-        labelStyle: { fill: theme === "dark" ? "#94a3b8" : "#475569", fontSize: 9, fontWeight: 500 },
-        labelBgStyle: { fill: theme === "dark" ? "#0f172a" : "#ffffff", fillOpacity: 0.9 },
+        labelStyle: { fill: theme === "dark" ? "#a5afab" : "#5d6d66", fontSize: 9, fontWeight: 500 },
+        labelBgStyle: { fill: theme === "dark" ? "#303637" : "#f5f7f6", fillOpacity: 0.9 },
       };
     });
 
@@ -655,7 +656,19 @@ const ReactFlowInner = forwardRef(function ReactFlowInner(
   }, []);
 
   return (
-    <div style={{ width: "100%", height: "100%", position: "relative" }}>
+    <div className="graph-stage" style={{ width: "100%", height: "100%", position: "relative" }}>
+      <div className="graph-hud" aria-hidden="true">
+        <div className="graph-hud-kicker">NETWORK VIEW</div>
+        <div className="graph-hud-title">{statusMessage || "Operational graph ready"}</div>
+        <div className="graph-hud-meta">
+          <span><strong>{rawNodes.length}</strong> ENTITIES</span>
+          <i />
+          <span><strong>{rawEdges.length}</strong> LINKS</span>
+          <i />
+          <span>SEARCH</span>
+        </div>
+      </div>
+
       {/* ─── Vertical Action Toolbar (Right Side) ─────────────────────────── */}
       <div className="floating-action-toolbar">
         {/* Graph Layout Switcher (Force, LR, TB) */}
@@ -760,7 +773,7 @@ const ReactFlowInner = forwardRef(function ReactFlowInner(
         defaultEdgeOptions={{ type: "curvedArrow" }}
         proOptions={{ hideAttribution: true }}
       >
-        <Background color={theme === "dark" ? "#1e293b" : "#f1f5f9"} gap={24} size={1} />
+        <Background color={theme === "dark" ? "#3a4240" : "#d3dcd6"} gap={32} size={1} />
       </ReactFlow>
 
       {/* Bottom Left Status Message (Reference pill) */}
@@ -771,11 +784,11 @@ const ReactFlowInner = forwardRef(function ReactFlowInner(
 
       {/* Bottom Right Zoom Control Bar (- 123% + FIT CTR) */}
       <div className="zoom-control-bar">
-        <button className="zoom-btn" onClick={() => zoomOut({ duration: 200 })} title="Zoom Out">
+        <button className="zoom-btn" onClick={() => zoomOut({ duration: 200 })} title="Zoom Out" aria-label="Zoom out">
           -
         </button>
         <span className="zoom-val">{zoomLevel}%</span>
-        <button className="zoom-btn" onClick={() => zoomIn({ duration: 200 })} title="Zoom In">
+        <button className="zoom-btn" onClick={() => zoomIn({ duration: 200 })} title="Zoom In" aria-label="Zoom in">
           +
         </button>
         <button className="zoom-text-btn" onClick={() => fitView({ padding: 0.14, duration: 300 })}>
