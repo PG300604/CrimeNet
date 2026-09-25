@@ -531,19 +531,19 @@ export default function AIAnnotationPanel({
             {/* 4 Metric Cards */}
             <div className="crimenet-metrics-grid">
               <div className="crimenet-metric-card">
-                <div className="val" style={{ color: "#2563eb" }}>{nodes.length}</div>
+                <div className="val" style={{ color: "var(--blue)" }}>{nodes.length}</div>
                 <div className="lbl">ENTITIES</div>
               </div>
               <div className="crimenet-metric-card">
-                <div className="val" style={{ color: "#16a34a" }}>{edges.length}</div>
+                <div className="val" style={{ color: "var(--green)" }}>{edges.length}</div>
                 <div className="lbl">LINKS</div>
               </div>
               <div className="crimenet-metric-card">
-                <div className="val" style={{ color: "#ea580c" }}>{metrics.density}%</div>
+                <div className="val" style={{ color: "var(--orange)" }}>{metrics.density}%</div>
                 <div className="lbl">DENSITY</div>
               </div>
               <div className="crimenet-metric-card">
-                <div className="val" style={{ color: "#9333ea" }}>{metrics.components}</div>
+                <div className="val" style={{ color: "var(--purple)" }}>{metrics.components}</div>
                 <div className="lbl">CLUSTERS</div>
               </div>
             </div>
@@ -562,7 +562,7 @@ export default function AIAnnotationPanel({
                       e.preventDefault();
                       onSelectNode?.(topBroker.id);
                     }}
-                    style={{ color: "#2563eb", fontWeight: 600, textDecoration: "none" }}
+                    style={{ color: "var(--teal)", fontWeight: 600, textDecoration: "none" }}
                   >
                     {topBroker.label}
                   </a>{" "}
@@ -606,21 +606,21 @@ export default function AIAnnotationPanel({
             </button>
 
             {langGraphBrief && (
-              <div className="unbound-card" style={{ marginBottom: 12, border: "1px solid #c7d2fe", background: "#f5f3ff", padding: 10 }}>
+              <div className="unbound-card" style={{ marginBottom: 12, border: "1px solid var(--border-2)", background: "var(--panel-2)", padding: 10 }}>
                 <div style={{ display: "flex", alignItems: "center", gap: 6, color: "var(--teal)", fontWeight: 700, fontSize: 12, marginBottom: 6 }}>
                   <ShieldCheck size={14} />
                   LangGraph Explainable Intelligence Dossier
                 </div>
-                <div style={{ fontSize: 11.5, lineHeight: 1.5, color: "#1e1b4b", whiteSpace: "pre-wrap", marginBottom: 8 }}>
+                <div style={{ fontSize: 11.5, lineHeight: 1.5, color: "var(--text)", whiteSpace: "pre-wrap", marginBottom: 8 }}>
                   {langGraphBrief.dossier?.executive_summary}
                 </div>
                 {langGraphBrief.recommendations && langGraphBrief.recommendations.length > 0 && (
-                  <div style={{ marginTop: 8, borderTop: "1px solid #e0e7ff", paddingTop: 6 }}>
-                    <div style={{ fontSize: 10.5, fontWeight: 700, color: "#4338ca", marginBottom: 4 }}>
+                  <div style={{ marginTop: 8, borderTop: "1px solid var(--border)", paddingTop: 6 }}>
+                    <div style={{ fontSize: 10.5, fontWeight: 700, color: "var(--teal)", marginBottom: 4 }}>
                       ACTIONABLE POLICE MEASURES:
                     </div>
                     {langGraphBrief.recommendations.map((rec, i) => (
-                      <div key={i} style={{ fontSize: 11, color: "#3730a3", marginBottom: 3 }}>
+                      <div key={i} style={{ fontSize: 11, color: "var(--text-muted)", marginBottom: 3 }}>
                         • <b>{rec.action}</b> ({rec.statute}): {rec.rationale}
                       </div>
                     ))}
@@ -703,12 +703,12 @@ export default function AIAnnotationPanel({
             <div className="unbound-sect-h">
               AI Hidden-Link Prediction <span className="unbound-n">{hiddenLinks.length}</span>
             </div>
-            <div style={{ fontSize: 11, color: "#64748b", marginBottom: 8 }}>
+            <div style={{ fontSize: 11, color: "var(--text-muted)", marginBottom: 8 }}>
               Inferred using Adamic-Adar triadic closure over indirect shared contacts.
             </div>
 
             {hiddenLinks.length === 0 ? (
-              <div style={{ padding: 24, textAlign: "center", color: "#94a3b8", fontSize: 12 }}>
+              <div style={{ padding: 24, textAlign: "center", color: "var(--text-dim)", fontSize: 12 }}>
                 No hidden link anomalies found in current network.
               </div>
             ) : (
@@ -722,7 +722,7 @@ export default function AIAnnotationPanel({
                           e.preventDefault();
                           onSelectNode?.(p.nodeA.id);
                         }}
-                        style={{ color: "#2563eb", fontWeight: 600, textDecoration: "none" }}
+                        style={{ color: "var(--teal)", fontWeight: 600, textDecoration: "none" }}
                       >
                         {p.nodeA.label}
                       </a>
@@ -733,7 +733,7 @@ export default function AIAnnotationPanel({
                           e.preventDefault();
                           onSelectNode?.(p.nodeB.id);
                         }}
-                        style={{ color: "#2563eb", fontWeight: 600, textDecoration: "none" }}
+                        style={{ color: "var(--teal)", fontWeight: 600, textDecoration: "none" }}
                       >
                         {p.nodeB.label}
                       </a>
@@ -760,7 +760,7 @@ export default function AIAnnotationPanel({
                         <>
                           <button
                             className="unbound-mini-btn"
-                            style={{ color: "#16a34a" }}
+                            style={{ color: "var(--green)" }}
                             onClick={() => handleAcceptLead(p.pairKey)}
                           >
                             Accept Lead
@@ -788,12 +788,12 @@ export default function AIAnnotationPanel({
             <div className="unbound-sect-h">
               Anomaly Alerts <span className="unbound-n">{finalAnomalies.length}</span>
             </div>
-            <div style={{ fontSize: 11, color: "#64748b", marginBottom: 8 }}>
+            <div style={{ fontSize: 11, color: "var(--text-muted)", marginBottom: 8 }}>
               Powered by scikit-learn Isolation Forest & topological graph analytics.
             </div>
 
             {finalAnomalies.length === 0 ? (
-              <div style={{ padding: 24, textAlign: "center", color: "#94a3b8", fontSize: 12 }}>
+              <div style={{ padding: 24, textAlign: "center", color: "var(--text-dim)", fontSize: 12 }}>
                 No critical anomalies detected in current network.
               </div>
             ) : (
@@ -807,7 +807,7 @@ export default function AIAnnotationPanel({
                       <span style={{ fontWeight: 600 }}>{a.type}</span>
                     </div>
                     <div className="unbound-why" style={{ marginTop: 3 }}>
-                      <b style={{ color: "#0f172a" }}>{a.subject}</b> — {a.why}
+                      <b style={{ color: "var(--text)" }}>{a.subject}</b> — {a.why}
                     </div>
                     <div className="unbound-row-actions">
                       <button
@@ -837,13 +837,13 @@ export default function AIAnnotationPanel({
         {activeSubtab === "nhop" && (
           <div>
             <div className="unbound-sect-h">N-Hop Neighborhood & Evidence</div>
-            <div style={{ fontSize: 11, color: "#64748b", marginBottom: 8 }}>
+            <div style={{ fontSize: 11, color: "var(--text-muted)", marginBottom: 8 }}>
               Explore multi-hop relationships and critical connectivity paths.
             </div>
 
             {/* Root Node Selector */}
             <div className="unbound-card" style={{ padding: 10, marginBottom: 10 }}>
-              <label style={{ fontSize: 11, fontWeight: 600, color: "#334155", display: "block", marginBottom: 4 }}>
+              <label style={{ fontSize: 11, fontWeight: 600, color: "var(--text)", display: "block", marginBottom: 4 }}>
                 Target Root Entity:
               </label>
               <select
@@ -862,7 +862,7 @@ export default function AIAnnotationPanel({
               {/* Hop Distance Slider */}
               <div style={{ display: "flex", justifyContent: "space-between", fontSize: 11, marginBottom: 4 }}>
                 <span>Exploration Radius:</span>
-                <b style={{ color: "#2563eb" }}>{nHopDistance} Hops</b>
+                <b style={{ color: "var(--blue)" }}>{nHopDistance} Hops</b>
               </div>
               <input
                 type="range"
@@ -871,7 +871,7 @@ export default function AIAnnotationPanel({
                 step="1"
                 value={nHopDistance}
                 onChange={(e) => setNHopDistance(Number(e.target.value))}
-                style={{ width: "100%", accentColor: "#2563eb" }}
+                style={{ width: "100%", accentColor: "var(--teal)" }}
               />
               <div style={{ display: "flex", justifyContent: "space-between", fontSize: 10, color: "#94a3b8", marginTop: 2 }}>
                 <span>1-Hop (Direct)</span>
@@ -895,7 +895,7 @@ export default function AIAnnotationPanel({
               if (h === 0) return null;
               return (
                 <div key={h} style={{ marginBottom: 8 }}>
-                  <div style={{ fontSize: 11, fontWeight: 700, color: "#475569", marginBottom: 4 }}>
+                  <div style={{ fontSize: 11, fontWeight: 700, color: "var(--text-muted)", marginBottom: 4 }}>
                     Hop {h} Entities ({hopNodes.length})
                   </div>
                   <div className="unbound-rank" style={{ maxHeight: 150, overflowY: "auto" }}>
@@ -924,7 +924,7 @@ export default function AIAnnotationPanel({
             <div className="unbound-sect-h">
               Forensic Timeline <span className="unbound-n">{timelineEvents.length}</span>
             </div>
-            <div style={{ fontSize: 11, color: "#64748b", marginBottom: 8 }}>
+            <div style={{ fontSize: 11, color: "var(--text-muted)", marginBottom: 8 }}>
               Chronological sequence of documented transactions and interactions.
             </div>
 
@@ -981,10 +981,10 @@ export default function AIAnnotationPanel({
           <div className="crimenet-modal-window report-modal">
             <div className="crimenet-modal-header">
               <div>
-                <div style={{ fontSize: 15, fontWeight: 700, color: "#0f172a" }}>
+                <div style={{ fontSize: 15, fontWeight: 700, color: "var(--text)" }}>
                   CrimeNet Case Intelligence Dossier
                 </div>
-                <div style={{ fontSize: 11, color: "#64748b" }}>
+                <div style={{ fontSize: 11, color: "var(--text-muted)" }}>
                   Automated Multi-Source Forensic Analysis · Generated {new Date().toLocaleString()}
                 </div>
               </div>
@@ -997,26 +997,26 @@ export default function AIAnnotationPanel({
               <div style={{ background: "#f8fafc", padding: 12, borderRadius: 6, marginBottom: 12, display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 8, textAlign: "center" }}>
                 <div>
                   <div style={{ fontSize: 16, fontWeight: 700, color: "#2563eb" }}>{nodes.length}</div>
-                  <div style={{ fontSize: 10, color: "#64748b" }}>TOTAL ENTITIES</div>
+                  <div style={{ fontSize: 10, color: "var(--text-muted)" }}>TOTAL ENTITIES</div>
                 </div>
                 <div>
                   <div style={{ fontSize: 16, fontWeight: 700, color: "#16a34a" }}>{edges.length}</div>
-                  <div style={{ fontSize: 10, color: "#64748b" }}>RELATIONSHIPS</div>
+                  <div style={{ fontSize: 10, color: "var(--text-muted)" }}>RELATIONSHIPS</div>
                 </div>
                 <div>
                   <div style={{ fontSize: 16, fontWeight: 700, color: "#ea580c" }}>{metrics.density}%</div>
-                  <div style={{ fontSize: 10, color: "#64748b" }}>DENSITY</div>
+                  <div style={{ fontSize: 10, color: "var(--text-muted)" }}>DENSITY</div>
                 </div>
                 <div>
                   <div style={{ fontSize: 16, fontWeight: 700, color: "#dc2626" }}>{anomalies.length}</div>
-                  <div style={{ fontSize: 10, color: "#64748b" }}>ACTIVE ALERTS</div>
+                  <div style={{ fontSize: 10, color: "var(--text-muted)" }}>ACTIVE ALERTS</div>
                 </div>
               </div>
 
               <div style={{ fontSize: 12, fontWeight: 700, margin: "12px 0 6px" }}>1. Key Entities of Interest</div>
               <table style={{ width: "100%", fontSize: 11, borderCollapse: "collapse", marginBottom: 12 }}>
                 <thead>
-                  <tr style={{ borderBottom: "1px solid #e2e8f0", color: "#64748b", textAlign: "left" }}>
+                  <tr style={{ borderBottom: "1px solid #e2e8f0", color: "var(--text-muted)", textAlign: "left" }}>
                     <th style={{ padding: 4 }}>Entity</th>
                     <th style={{ padding: 4 }}>Type</th>
                     <th style={{ padding: 4 }}>Connections</th>
@@ -1031,7 +1031,7 @@ export default function AIAnnotationPanel({
                         <span style={{ color: TYPE_COLOR[e.type] || "#2563eb" }}>{e.type}</span>
                       </td>
                       <td style={{ padding: 4 }}>{degreeMap[e.id] || 0}</td>
-                      <td style={{ padding: 4, color: "#64748b" }}>
+                      <td style={{ padding: 4, color: "var(--text-muted)" }}>
                         {e.properties?.cases ? e.properties.cases.join(", ") : e.properties?.role || "Active node in network"}
                       </td>
                     </tr>
@@ -1061,7 +1061,7 @@ export default function AIAnnotationPanel({
                 {hiddenLinks.slice(0, 4).map((l, idx) => (
                   <div key={idx} style={{ padding: "6px 8px", background: "#f8fafc", borderRadius: 3 }}>
                     <b>{l.nodeA.label} ↔ {l.nodeB.label}</b> ({l.score}% confidence)
-                    <div style={{ color: "#64748b", marginTop: 2 }}>
+                    <div style={{ color: "var(--text-muted)", marginTop: 2 }}>
                       Shared intermediaries: {l.shared.map((s) => s.label).join(", ")}
                     </div>
                   </div>

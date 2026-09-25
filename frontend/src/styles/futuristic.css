@@ -1557,3 +1557,55 @@ textarea:focus-visible {
   transform: translateY(-1px);
   box-shadow: 0 4px 14px rgba(0,0,0,0.15) !important;
 }
+
+/* ── Analysis Panel Dropdowns & Selects (Theme Adaptive) ────────────────── */
+.analysis-dropdown-header {
+  border-color: var(--border-2) !important;
+  background: var(--panel-2) !important;
+  color: var(--text) !important;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1) !important;
+}
+
+.analysis-dropdown-header:hover {
+  border-color: var(--teal) !important;
+  background: var(--panel-hover) !important;
+}
+
+.analysis-dropdown-header.is-open {
+  border-color: var(--teal) !important;
+  box-shadow: 0 0 0 2px var(--teal-s) !important;
+}
+
+.analysis-placeholder {
+  color: var(--text-dim) !important;
+}
+
+.analysis-dropdown-menu {
+  background: var(--panel) !important;
+  border-color: var(--border-2) !important;
+  box-shadow: var(--shadow) !important;
+}
+
+.analysis-dropdown-option {
+  color: var(--text) !important;
+}
+
+.analysis-dropdown-option:hover {
+  background: var(--panel-hover) !important;
+  color: var(--teal) !important;
+}
+
+.analysis-dropdown-option.selected {
+  background: var(--teal-s) !important;
+  color: var(--teal) !important;
+}
+
+select,
+select option,
+.crimenet-select,
+.crimenet-select-sm,
+.crimenet-select option,
+.crimenet-select-sm option {
+  color: var(--text) !important;
+  background: var(--panel) !important;
+}

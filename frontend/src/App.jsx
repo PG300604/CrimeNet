@@ -5,7 +5,7 @@ import {
   Network, ChevronDown, ChevronLeft, ChevronRight, RefreshCw,
   Upload, Download, Save, Image as ImageIcon, ExternalLink,
   X, Plus, Trash2, Edit3, Merge, Eye, EyeOff, Search,
-  FileText, BarChart2, Sparkles, FolderOpen, ArrowRight,
+  FileText, BarChart2, FolderOpen, ArrowRight,
   CheckCircle2, Minus, Square, Layers, GitFork, Tag,
   LayoutDashboard, Sidebar, Maximize2, Sliders, Sun, Moon,
 } from "lucide-react";
@@ -20,8 +20,6 @@ import AddElementModal from "./components/AddElementModal";
 import MergeElementsModal from "./components/MergeElementsModal";
 import DeleteConfirmModal from "./components/DeleteConfirmModal";
 import TacticalCommandBar from "./components/TacticalCommandBar";
-import GeminiChatSidebar from "./components/GeminiChatSidebar";
-import GeminiLeftChatbot from "./components/GeminiLeftChatbot";
 import UserDocumentationModal from "./components/UserDocumentationModal";
 import DynamicActionLoader from "./components/DynamicActionLoader";
 
@@ -142,7 +140,6 @@ export default function App() {
 
   // ── Move Aside / Sidebar Collapse States ────────────────────────────────────
   const [leftSidebarCollapsed, setLeftSidebarCollapsed] = useState(false);
-  const [leftTab, setLeftTab] = useState("gemini"); // "gemini" | "controls"
   const [rightSidebarCollapsed, setRightSidebarCollapsed] = useState(
     () => typeof window !== "undefined" && window.innerWidth < 1100
   );
@@ -723,34 +720,18 @@ export default function App() {
         caseId={selectedDatasetId}
         nodesCount={activeNodes.length}
         edgesCount={displayedEdges.length}
-        onToggleGeminiChat={() => {
-          setLeftSidebarCollapsed(false);
-          setLeftTab((prev) => (prev === "gemini" ? "controls" : "gemini"));
-        }}
         onToggleTheme={toggleTheme}
         theme={theme}
       />
 
       {/* ── Main Body ────────────────────────────────────────────────────────── */}
       <div className="body" role="main">
-        {/* ── Left Sidebar (Gemini AI Chatbot & Control Boxes) ─────────────────── */}
-        <div className={`left-sidebar ${leftSidebarCollapsed ? "collapsed" : ""} ${leftTab === "gemini" ? "gemini-mode" : ""}`}>
-          <div className="left-sidebar-toolbar" style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 6, flexShrink: 0 }}>
-            <div style={{ display: "flex", alignItems: "center", gap: 3, background: "var(--bg-2, #f1f5f9)", padding: "2px 4px", borderRadius: 6, border: "1px solid var(--border, #e2e8f0)" }}>
-              <button
-                type="button"
-                className={`left-nav-pill ${leftTab === "gemini" ? "active" : ""}`}
-                onClick={() => setLeftTab("gemini")}
-              >
-                <Sparkles size={11} /> AI Chatbox
-              </button>
-              <button
-                type="button"
-                className={`left-nav-pill ${leftTab === "controls" ? "active" : ""}`}
-                onClick={() => setLeftTab("controls")}
-              >
-                <Layers size={11} /> Control Boxes
-              </button>
+        {/* ── Left Sidebar: Control Boxes (Nodes, Edges, Labels) ───────────────── */}
+        <div className={`left-sidebar ${leftSidebarCollapsed ? "collapsed" : ""}`}>
+          <div className="left-sidebar-toolbar" style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 8, flexShrink: 0 }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 6, fontWeight: 700, fontSize: 12, color: "var(--text)" }}>
+              <Layers size={14} color="var(--teal)" />
+              <span>Control Boxes</span>
             </div>
 
             <button
@@ -763,25 +744,11 @@ export default function App() {
             </button>
           </div>
 
-          {leftTab === "gemini" ? (
-            <GeminiLeftChatbot
-              nodes={activeNodes}
-              edges={displayedEdges}
-              caseId={selectedDatasetId}
-              onGraphUpdate={handleGraphUpdate}
-              onSelectNode={(id) => {
-                handleSelect(id);
-                canvasRef.current?.center(id);
-              }}
-              onToast={notify}
-            />
-          ) : (
-            <>
-              {/* "OPEN ORIGINAL NETWORK" Button */}
-              <button className="btn-open-original" onClick={handleShowAllNodes}>
-                <FolderOpen size={13} />
-                Open Original Network
-              </button>
+          {/* "OPEN ORIGINAL NETWORK" Button */}
+          <button className="btn-open-original" onClick={handleShowAllNodes}>
+            <FolderOpen size={13} />
+            Open Original Network
+          </button>
 
           {/* NODES Box Card */}
           <div className={`box-card ${boxStates.nodes.collapsed ? "collapsed" : ""} ${boxStates.nodes.maximized ? "maximized" : ""}`}>
@@ -990,8 +957,6 @@ export default function App() {
               </table>
             </div>
           </div>
-            </>
-          )}
         </div>
 
         {/* ── Main Canvas ────────────────────────────────────────────────────── */}

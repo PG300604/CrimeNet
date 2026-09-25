@@ -1541,54 +1541,57 @@ body {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  border: 1px solid #cbd5e1;
-  border-radius: 4px;
+  border: 1px solid var(--border-2);
+  border-radius: var(--radius);
   padding: 8px 12px;
-  background: #ffffff;
+  background: var(--panel-2);
   cursor: pointer;
   font-size: 13px;
-  color: #1e293b;
+  color: var(--text);
   user-select: none;
-  transition: border-color 0.15s ease;
+  transition: all 0.18s cubic-bezier(0.16, 1, 0.3, 1);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
 }
 .analysis-dropdown-header:hover {
-  border-color: #94a3b8;
+  border-color: var(--teal);
+  background: var(--panel-hover);
 }
 .analysis-dropdown-header.is-open {
-  border-color: #3b82f6;
-  box-shadow: 0 0 0 1px #3b82f6;
+  border-color: var(--teal);
+  box-shadow: 0 0 0 2px var(--teal-s);
 }
 
 .analysis-placeholder {
-  color: #94a3b8;
+  color: var(--text-dim);
 }
 
 .analysis-header-actions {
   display: flex;
   align-items: center;
   gap: 6px;
-  color: #64748b;
+  color: var(--text-muted);
 }
 .analysis-clear-btn {
   display: flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  color: #64748b;
+  color: var(--text-muted);
+  transition: color 0.15s ease;
 }
 .analysis-clear-btn:hover {
-  color: #0f172a;
+  color: var(--rose-text);
 }
 
 .analysis-dropdown-menu {
   position: absolute;
-  top: calc(100% + 2px);
+  top: calc(100% + 4px);
   left: 0;
   right: 0;
-  background: #ffffff;
-  border: 1px solid #cbd5e1;
-  border-radius: 4px;
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -2px rgba(0, 0, 0, 0.1);
+  background: var(--panel);
+  border: 1px solid var(--border-2);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-md);
   z-index: 50;
   max-height: 220px;
   overflow-y: auto;
@@ -1597,38 +1600,42 @@ body {
 .analysis-dropdown-option {
   padding: 8px 12px;
   font-size: 13px;
-  color: #1e293b;
+  color: var(--text);
   cursor: pointer;
-  transition: background 0.1s ease;
+  transition: background 0.15s ease, color 0.15s ease;
 }
 .analysis-dropdown-option:hover {
-  background: #e0f2fe; /* Light blue highlight from user screenshots */
+  background: var(--panel-hover);
+  color: var(--teal);
 }
 .analysis-dropdown-option.selected {
-  background: #e0f2fe;
-  font-weight: 500;
+  background: var(--teal-s);
+  color: var(--teal);
+  font-weight: 600;
 }
 
-/* Analyze Button (Matching Screenshot) */
+/* Analyze Button */
 .btn-analyze {
   width: 100%;
   padding: 8px 14px;
-  background: #ffffff;
-  border: 1px solid #cbd5e1;
-  border-radius: 4px;
+  background: var(--teal);
+  border: 1px solid var(--teal);
+  border-radius: var(--radius);
   font-size: 12px;
   font-weight: 700;
   letter-spacing: 0.08em;
   text-transform: uppercase;
-  color: #0f172a;
+  color: #ffffff !important;
   cursor: pointer;
   text-align: center;
-  transition: all 0.15s ease;
+  transition: all 0.18s cubic-bezier(0.16, 1, 0.3, 1);
+  box-shadow: 0 2px 8px rgba(2, 132, 199, 0.25);
 }
 .btn-analyze:hover {
-  background: #f8fafc;
-  border-color: #3b82f6;
-  color: #2563eb;
+  background: var(--teal-hover);
+  border-color: var(--teal-hover);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(2, 132, 199, 0.35);
 }
 .btn-analyze:disabled {
   opacity: 0.5;

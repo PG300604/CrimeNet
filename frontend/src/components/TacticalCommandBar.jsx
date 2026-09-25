@@ -5,7 +5,6 @@ export default function TacticalCommandBar({
   caseId = "CASE-2024-MH-088",
   nodesCount = 0,
   edgesCount = 0,
-  onToggleGeminiChat,
   onToggleTheme,
   theme = "dark",
 }) {
