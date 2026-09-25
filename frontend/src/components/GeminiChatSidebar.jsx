@@ -554,7 +554,7 @@ export default function GeminiChatSidebar({
               borderRadius: "50%",
               border: "none",
               background: input.trim() && !loading
-                ? "#4a6558"
+                ? "#4fc3f7"
                 : "#cbd5e1",
               color: "#ffffff",
               display: "flex",

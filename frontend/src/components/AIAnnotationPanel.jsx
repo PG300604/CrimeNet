@@ -30,6 +30,7 @@ export default function AIAnnotationPanel({
   onToast,
   caseName = "Active Case",
   caseId = "CASE-2024-MH-088",
+  onOpenDoc,
 }) {
   const [activeSubtab, setActiveSubtab] = useState("insights"); // "insights" | "hidden" | "anomalies" | "nhop" | "timeline"
   const [searchQuery, setSearchQuery] = useState("");
@@ -588,7 +589,7 @@ export default function AIAnnotationPanel({
                 padding: "8px 12px",
                 borderRadius: 6,
                 border: "none",
-                background: "#3b5549",
+                background: "var(--teal, #4fc3f7)",
                 color: "#ffffff",
                 fontWeight: 600,
                 fontSize: 12,
@@ -967,7 +968,7 @@ export default function AIAnnotationPanel({
 
           <button
             className="btn-user-doc"
-            onClick={() => onToast?.("User documentation opened")}
+            onClick={() => onOpenDoc ? onOpenDoc() : onToast?.("User documentation opened")}
           >
             <ExternalLink size={13} /> USER DOCUMENTATION
           </button>

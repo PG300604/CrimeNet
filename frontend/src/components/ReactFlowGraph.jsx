@@ -28,20 +28,20 @@ import "@xyflow/react/dist/style.css";
 
 // ─── Color Maps ───────────────────────────────────────────────────────────────
 export const TYPE_COLOR = {
-  person:       "#78998b",
-  location:     "#a69470",
-  object:       "#938b9b",
-  vehicle:      "#82949a",
-  event:        "#879c94",
-  domain:       "#a38a6e",
-  ip:           "#7d9f98",
-  email:        "#a08b96",
-  org:          "#88978b",
-  organization: "#88978b",
-  phone:        "#819ba0",
-  account:      "#78a589",
-  upi:          "#78a589",
-  bank:         "#78a589",
+  person:       "#5b9bd5",
+  location:     "#ff9800",
+  object:       "#ab47bc",
+  vehicle:      "#26c6da",
+  event:        "#42a5f5",
+  domain:       "#ef5350",
+  ip:           "#26a69a",
+  email:        "#ec407a",
+  org:          "#7e57c2",
+  organization: "#7e57c2",
+  phone:        "#29b6f6",
+  account:      "#66bb6a",
+  upi:          "#ffa726",
+  bank:         "#66bb6a",
 };
 
 export const TYPE_ICON = {
@@ -63,8 +63,8 @@ export const TYPE_ICON = {
 };
 
 export const COMMUNITY_PALETTE = [
-  "#78998b", "#819ba0", "#a69470", "#938b9b",
-  "#a08b96", "#7d9f98", "#a38a6e", "#88978b",
+  "#5b9bd5", "#ef5350", "#ff9800", "#ab47bc",
+  "#66bb6a", "#26c6da", "#ec407a", "#7e57c2",
 ];
 
 // Node geometry
@@ -88,14 +88,14 @@ function applyDagre(nodes, edges, rankdir = "LR") {
 
 // ─── Custom Circular Node with SVG Icon ───────────────────────────────────────
 function CleanCircularNode({ data = {}, selected }) {
-  const hex = data?.hexColor || "#78998b";
+  const hex = data?.hexColor || "#5b9bd5";
   const isSelected = selected || data?.isSelected;
   const isNeighbor = data?.isNeighbor;
   const isDimmed = data?.isDimmed && !isSelected && !isNeighbor;
   const isPath = data?.isPath;
   const isDark = data?.theme === "dark";
 
-  const ringColor = isSelected ? (isDark ? "#9ac6ab" : "#4b8b6a") : isPath ? "#69d49c" : isNeighbor ? "#78998b" : "transparent";
+  const ringColor = isSelected ? (isDark ? "#81d4fa" : "#1976d2") : isPath ? "#ff9800" : isNeighbor ? "#5b9bd5" : "transparent";
   const ringW = (isSelected || isPath) ? 4 : isNeighbor ? 3 : 0;
 
   const nodeType = (data?.type || "").toLowerCase();
@@ -120,8 +120,8 @@ function CleanCircularNode({ data = {}, selected }) {
           width: CIRCLE,
           height: CIRCLE,
           borderRadius: "50%",
-          background: isSelected ? (isDark ? "#4e7561" : "#6c9b80") : hex,
-          border: isSelected ? "1px solid #9ac6ab" : "1px solid rgba(220, 230, 224, 0.12)",
+          background: isSelected ? (isDark ? "#1565c0" : "#1976d2") : hex,
+          border: isSelected ? "1px solid #64b5f6" : "1px solid rgba(255, 255, 255, 0.08)",
           display: "flex",
           alignItems: "center",
           justifyContent: "center",
@@ -519,9 +519,9 @@ const ReactFlowInner = forwardRef(function ReactFlowInner(
       const onPath = pathIds && pathSet.has(e.source) && pathSet.has(e.target);
       const isDimmed = hasAnySelection && !isThisEdgeSelected && !connectsSelected && !onPath;
 
-      const highlightColor = theme === "dark" ? "#9ac6ab" : "#4b8b6a";
-      const defaultColor = theme === "dark" ? "#66736d" : "#9aa8a0";
-      const edgeColor = onPath ? "#69d49c" : (isThisEdgeSelected || connectsSelected) ? highlightColor : defaultColor;
+      const highlightColor = theme === "dark" ? "#81d4fa" : "#1976d2";
+      const defaultColor = theme === "dark" ? "#555555" : "#bbbbbb";
+      const edgeColor = onPath ? "#ff9800" : (isThisEdgeSelected || connectsSelected) ? highlightColor : defaultColor;
 
       return {
         id: edgeKey,
@@ -544,11 +544,11 @@ const ReactFlowInner = forwardRef(function ReactFlowInner(
           strokeWidth: isThisEdgeSelected ? 3 : onPath ? 2.2 : connectsSelected ? 1.8 : 1.2,
           opacity: isDimmed ? 0.08 : onPath ? 0.95 : (isThisEdgeSelected || connectsSelected) ? 0.9 : (theme === "dark" ? 0.62 : 0.58),
           filter: isThisEdgeSelected
-            ? `drop-shadow(0 0 3px ${theme === "dark" ? "rgba(105, 212, 156, 0.35)" : "rgba(75, 139, 106, 0.25)"})`
+            ? `drop-shadow(0 0 3px ${theme === "dark" ? "rgba(79, 195, 247, 0.35)" : "rgba(25, 118, 210, 0.25)"})`
             : undefined,
         },
-        labelStyle: { fill: theme === "dark" ? "#a5afab" : "#5d6d66", fontSize: 9, fontWeight: 500 },
-        labelBgStyle: { fill: theme === "dark" ? "#303637" : "#f5f7f6", fillOpacity: 0.9 },
+        labelStyle: { fill: theme === "dark" ? "#aaaaaa" : "#555555", fontSize: 9, fontWeight: 500 },
+        labelBgStyle: { fill: theme === "dark" ? "#1a1a1a" : "#ffffff", fillOpacity: 0.9 },
       };
     });
 
@@ -657,17 +657,7 @@ const ReactFlowInner = forwardRef(function ReactFlowInner(
 
   return (
     <div className="graph-stage" style={{ width: "100%", height: "100%", position: "relative" }}>
-      <div className="graph-hud" aria-hidden="true">
-        <div className="graph-hud-kicker">NETWORK VIEW</div>
-        <div className="graph-hud-title">{statusMessage || "Operational graph ready"}</div>
-        <div className="graph-hud-meta">
-          <span><strong>{rawNodes.length}</strong> ENTITIES</span>
-          <i />
-          <span><strong>{rawEdges.length}</strong> LINKS</span>
-          <i />
-          <span>SEARCH</span>
-        </div>
-      </div>
+
 
       {/* ─── Vertical Action Toolbar (Right Side) ─────────────────────────── */}
       <div className="floating-action-toolbar">
@@ -773,14 +763,10 @@ const ReactFlowInner = forwardRef(function ReactFlowInner(
         defaultEdgeOptions={{ type: "curvedArrow" }}
         proOptions={{ hideAttribution: true }}
       >
-        <Background color={theme === "dark" ? "#3a4240" : "#d3dcd6"} gap={32} size={1} />
+        <Background color={theme === "dark" ? "#222222" : "#e0ddd8"} gap={32} size={1} />
       </ReactFlow>
 
-      {/* Bottom Left Status Message (Reference pill) */}
-      <div className="bottom-status-pill">
-        <CheckCircle2 size={13} color="#10b7a6" />
-        <span>{statusMessage || "The complete Network was loaded"}</span>
-      </div>
+
 
       {/* Bottom Right Zoom Control Bar (- 123% + FIT CTR) */}
       <div className="zoom-control-bar">

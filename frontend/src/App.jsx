@@ -22,6 +22,8 @@ import DeleteConfirmModal from "./components/DeleteConfirmModal";
 import TacticalCommandBar from "./components/TacticalCommandBar";
 import GeminiChatSidebar from "./components/GeminiChatSidebar";
 import GeminiLeftChatbot from "./components/GeminiLeftChatbot";
+import UserDocumentationModal from "./components/UserDocumentationModal";
+import DynamicActionLoader from "./components/DynamicActionLoader";
 
 import { DATASETS_CATALOG, getDatasetById } from "./data/crimeNetDatasets";
 import { degreeMap as buildDegreeMap } from "./lib/graphAnalysis";
@@ -113,6 +115,9 @@ export default function App() {
   const [isAddOpen, setIsAddOpen] = useState(false);
   const [isDeleteOpen, setIsDeleteOpen] = useState(false);
   const [isMergeOpen, setIsMergeOpen] = useState(false);
+  const [isDocOpen, setIsDocOpen] = useState(false);
+  const [actionLoading, setActionLoading] = useState(false);
+  const [actionLoadingMessage, setActionLoadingMessage] = useState("");
 
   // ── Windows Application Style Box States (Minimize / Maximize) ──────────────
   const [boxStates, setBoxStates] = useState({
@@ -160,6 +165,28 @@ export default function App() {
 
   // ── Right Sidebar Tabs: NETWORK | ANALYSIS | INTELLIGENCE ───────────────────
   const [activeTab, setActiveTab] = useState("network"); // "network" | "analysis" | "intelligence"
+
+  const handleTabSwitch = useCallback((newTab) => {
+    if (newTab === activeTab) return;
+    const titles = {
+      network: "Loading Network Explorer...",
+      analysis: "Running Graph Analysis Engine...",
+      intelligence: "Loading AI Intelligence Module..."
+    };
+    setActionLoadingMessage(titles[newTab] || "Switching View...");
+    setActionLoading(true);
+    setActiveTab(newTab);
+    setTimeout(() => setActionLoading(false), 260);
+  }, [activeTab]);
+
+  const handleDatasetChange = useCallback((newId) => {
+    const ds = DATASETS_CATALOG.find(d => d.id === newId);
+    setActionLoadingMessage(`Loading ${ds ? ds.name : newId}...`);
+    setActionLoading(true);
+    setSelectedDatasetId(newId);
+    setTimeout(() => setActionLoading(false), 320);
+  }, []);
+
   const [showNodeDetail, setShowNodeDetail] = useState(false);
   const [isGeminiChatOpen, setIsGeminiChatOpen] = useState(false);
 
@@ -715,7 +742,7 @@ export default function App() {
                 className={`left-nav-pill ${leftTab === "gemini" ? "active" : ""}`}
                 onClick={() => setLeftTab("gemini")}
               >
-                <Sparkles size={11} /> Gemini Copilot
+                <Sparkles size={11} /> AI Chatbox
               </button>
               <button
                 type="button"
@@ -1041,19 +1068,19 @@ export default function App() {
           <div className="tab-bar">
             <button
               className={`tab-btn ${activeTab === "network" ? "active" : ""}`}
-              onClick={() => setActiveTab("network")}
+              onClick={() => handleTabSwitch("network")}
             >
               Network
             </button>
             <button
               className={`tab-btn ${activeTab === "analysis" ? "active" : ""}`}
-              onClick={() => setActiveTab("analysis")}
+              onClick={() => handleTabSwitch("analysis")}
             >
               Analysis
             </button>
             <button
               className={`tab-btn ${activeTab === "intelligence" ? "active" : ""}`}
-              onClick={() => setActiveTab("intelligence")}
+              onClick={() => handleTabSwitch("intelligence")}
             >
               Intelligence
             </button>
@@ -1090,7 +1117,7 @@ export default function App() {
                     className="crimenet-select"
                     aria-label="Select investigation network"
                     value={selectedDatasetId}
-                    onChange={(e) => setSelectedDatasetId(e.target.value)}
+                    onChange={(e) => handleDatasetChange(e.target.value)}
                     style={{ fontWeight: 500, cursor: "pointer" }}
                   >
                     {DATASETS_CATALOG.map((ds) => (
@@ -1261,7 +1288,7 @@ export default function App() {
                 {/* User Documentation Button */}
                 <button
                   className="btn-user-doc"
-                  onClick={() => notify("CrimeNet user documentation opened")}
+                  onClick={() => setIsDocOpen(true)}
                 >
                   <ExternalLink size={12} /> User Documentation
                 </button>
@@ -1311,6 +1338,7 @@ export default function App() {
                 onToast={notify}
                 caseName={currentDataset.name}
                 caseId={selectedDatasetId}
+                onOpenDoc={() => setIsDocOpen(true)}
               />
             )}
           </div>
@@ -1382,6 +1410,16 @@ export default function App() {
         onClose={() => setIsDeleteOpen(false)}
         elementName={selectedNodeObj?.label}
         onConfirm={handleDeleteConfirmed}
+      />
+
+      <UserDocumentationModal
+        isOpen={isDocOpen}
+        onClose={() => setIsDocOpen(false)}
+      />
+
+      <DynamicActionLoader
+        active={actionLoading}
+        message={actionLoadingMessage}
       />
     </div>
   );

@@ -45,7 +45,7 @@ export default function GeminiLeftChatbot({
       sender: "gemini",
       text: `### CrimeNet Intelligence\n\nI am your investigative analysis assistant, grounded in the active network topology (**${nodes.length} entities**, **${edges.length} edges**), anomaly metrics, and indexed evidence.\n\nChoose an inquiry below or paste suspect facts to extend the graph:`,
       timestamp: "Just now",
-      model: "Grounded copilot",
+      model: "AI Assistant",
     },
   ]);
   const [input, setInput] = useState("");
@@ -115,7 +115,7 @@ export default function GeminiLeftChatbot({
         sender: "gemini",
         text: res.reply || "No response received.",
         timestamp: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
-        model: res.model || "Gemini 2.5 Flash",
+        model: "CrimeNet AI",
         extractedCount: res.extractedCount || 0,
         newNodes: res.newNodes || [],
       };
@@ -124,7 +124,7 @@ export default function GeminiLeftChatbot({
 
       // If narrative ingestion yielded new nodes/edges, notify canvas!
       if (res.newNodes && res.newNodes.length > 0) {
-        onToast?.(`[Gemini Extraction] Added ${res.newNodes.length} entities to operational graph.`);
+        onToast?.(`[AI Extraction] Added ${res.newNodes.length} entities to operational graph.`);
         if (onGraphUpdate) {
           const mergedNodes = [...nodes];
           const existIds = new Set(nodes.map((n) => n.id));
@@ -165,7 +165,7 @@ export default function GeminiLeftChatbot({
         sender: "gemini",
         text: "Chat cleared. The active graph context and indexed evidence remain available.", 
         timestamp: "Just now",
-        model: "Grounded copilot",
+        model: "AI Assistant",
       },
     ]);
   };
@@ -214,10 +214,10 @@ export default function GeminiLeftChatbot({
           </div>
           <div>
             <span className="gemini-subheader-title" style={{ fontSize: 11.5, fontWeight: 700, color: "var(--text-1, #0f172a)" }}>
-              Intelligence Copilot
+              AI Chatbox
             </span>
             <span className="gemini-status" style={{ fontSize: 10, color: "#10b981", marginLeft: 6, fontWeight: 600 }}>
-              ● GROUNDED MODE
+              ● Online
             </span>
           </div>
         </div>
@@ -244,8 +244,8 @@ export default function GeminiLeftChatbot({
         className="gemini-prompt-strip"
         style={{
           padding: "6px 8px",
-          background: "#ffffff",
-          borderBottom: "1px solid #f1f5f9",
+          background: "var(--panel)",
+          borderBottom: "1px solid var(--border)",
           display: "flex",
           gap: 4,
           overflowX: "auto",
@@ -263,22 +263,15 @@ export default function GeminiLeftChatbot({
             style={{
               padding: "3px 8px",
               borderRadius: 12,
-              border: "1px solid #e2e8f0",
-              background: "#f8fafc",
-              color: "#334155",
+              border: "1px solid var(--border-2)",
+              background: "var(--panel-2)",
+              color: "var(--text)",
+              boxShadow: "0 2px 6px rgba(0,0,0,0.1)",
               fontSize: 10.5,
               fontWeight: 500,
               cursor: "pointer",
               flexShrink: 0,
               transition: "all 0.15s ease",
-            }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.background = "#eef2ff";
-              e.currentTarget.style.borderColor = "#c7d2fe";
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.background = "#f8fafc";
-              e.currentTarget.style.borderColor = "#e2e8f0";
             }}
           >
             {item.label}
@@ -296,7 +289,7 @@ export default function GeminiLeftChatbot({
           display: "flex",
           flexDirection: "column",
           gap: 12,
-          background: "#f8fafc",
+          background: "var(--bg)",
         }}
       >
         {messages.map((m) => {
@@ -359,12 +352,12 @@ export default function GeminiLeftChatbot({
                 <div
                   className={`gemini-message-bubble ${isUser ? "user" : "assistant"}`}
                   style={{
-                    background: isUser ? "#1e293b" : "#ffffff",
-                    color: isUser ? "#f8fafc" : "#0f172a",
-                    padding: isUser ? "8px 12px" : "10px 12px",
+                    background: isUser ? "linear-gradient(135deg, var(--teal), #0284c7)" : "var(--panel-2)",
+                    color: isUser ? "#ffffff" : "var(--text)",
+                    padding: isUser ? "9px 13px" : "11px 14px",
                     borderRadius: isUser ? "14px 14px 3px 14px" : "14px 14px 14px 3px",
-                    border: isUser ? "none" : "1px solid #e2e8f0",
-                    boxShadow: "0 1px 2px rgba(0,0,0,0.04)",
+                    border: isUser ? "none" : "1px solid var(--border-2)",
+                    boxShadow: isUser ? "0 4px 14px rgba(2, 132, 199, 0.3)" : "0 3px 12px rgba(0,0,0,0.15)",
                     fontSize: 12,
                     lineHeight: 1.5,
                     whiteSpace: "pre-wrap",
@@ -482,7 +475,7 @@ export default function GeminiLeftChatbot({
               }}
             >
               <Loader2 size={12} className="spin" />
-              <span>Intelligence copilot is analyzing the network...</span>
+              <span>Analyzing your request...</span>
             </div>
           </div>
         )}
@@ -528,8 +521,8 @@ export default function GeminiLeftChatbot({
         className="gemini-composer"
         style={{
           padding: "8px 10px",
-          background: "#ffffff",
-          borderTop: "1px solid #e2e8f0",
+          background: "var(--panel)",
+          borderTop: "1px solid var(--border)",
           flexShrink: 0,
         }}
       >
@@ -542,10 +535,11 @@ export default function GeminiLeftChatbot({
           style={{
             display: "flex",
             alignItems: "center",
-            background: "#f1f5f9",
+            background: "var(--bg-2)",
             borderRadius: 20,
             padding: "3px 6px 3px 10px",
-            border: "1px solid #cbd5e1",
+            border: "1px solid var(--border-2)",
+            boxShadow: "inset 0 1px 3px rgba(0,0,0,0.1)",
           }}
         >
           {/* File Attachment Input */}
@@ -580,10 +574,10 @@ export default function GeminiLeftChatbot({
           <input
             type="text"
             className="gemini-composer-input"
-            aria-label="Ask the investigative copilot"
+            aria-label="Ask the AI Chatbox"
             value={input}
             onChange={(e) => setInput(e.target.value)}
-            placeholder="Ask Gemini or paste suspect narrative..."
+            placeholder="Type your message here..."
             disabled={loading}
             style={{
               flex: 1,
@@ -591,14 +585,14 @@ export default function GeminiLeftChatbot({
               background: "transparent",
               outline: "none",
               fontSize: 11.5,
-              color: "#0f172a",
+              color: "var(--text)",
             }}
           />
 
           <button
             type="submit"
             className="gemini-send-button"
-            aria-label="Send message to copilot"
+            aria-label="Send message"
             disabled={(!input.trim() && !attachedFile) || loading}
             style={{
               width: 28,
@@ -606,7 +600,7 @@ export default function GeminiLeftChatbot({
               borderRadius: "50%",
               border: "none",
               background: (input.trim() || attachedFile) && !loading
-                ? "#4a6558"
+                ? "#4fc3f7"
                 : "#cbd5e1",
               color: "#ffffff",
               display: "flex",
