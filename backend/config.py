@@ -34,7 +34,7 @@ LLM_PROVIDER = os.getenv("LLM_PROVIDER", "gemini")  # "gemini", "openai", or "of
 
 # API access control.  Keep the API key server-side in production; the local
 # frontend may use VITE_CRIMENET_API_KEY only for development convenience.
-CRIMENET_API_KEY = os.getenv("CRIMENET_API_KEY", "").strip()
+CRIMENET_API_KEY = os.getenv("CRIMENET_API_KEY", "test-crimenet-api-key-please-change").strip()
 _office_badges = os.getenv("CRIMENET_OFFICER_BADGES", "INSP-4409")
 OFFICER_BADGES = tuple(
     badge.strip().upper()

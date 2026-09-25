@@ -14,7 +14,7 @@ const configuredApiUrl = import.meta.env.VITE_API_URL || defaultApiUrl;
 const API_URL = configuredApiUrl.replace(/\/+$/, "");
 const API_ROOT = import.meta.env.VITE_API_ROOT || API_URL.replace(/\/api$/, "");
 const configuredApiKey =
-  import.meta.env.VITE_CRIMENET_API_KEY || import.meta.env.VITE_API_KEY || "";
+  import.meta.env.VITE_CRIMENET_API_KEY || import.meta.env.VITE_API_KEY || "test-crimenet-api-key-please-change";
 const configuredOfficerBadge = import.meta.env.VITE_OFFICER_BADGE || "INSP-4409";
 
 function readSessionValue(key) {
