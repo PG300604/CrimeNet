@@ -389,41 +389,65 @@ export default function AnalysisPanel({
 
           {/* 3. Link Prediction Results */}
           {results.type === "links" && (
-            <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+            <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
               {results.data.length === 0 ? (
                 <div style={{ fontSize: 11.5, color: "var(--text-muted)", textAlign: "center", padding: "12px 0" }}>
                   No candidate links found with shared neighbors
                 </div>
               ) : (
-                results.data.map((link, idx) => (
-                  <div
-                    key={idx}
-                    style={{
-                      padding: "7px 10px",
-                      background: "#ffffff",
-                      border: "1px solid var(--border)",
-                      borderRadius: "var(--radius)",
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "space-between",
-                      fontSize: "11px",
-                      cursor: "pointer",
-                    }}
-                    onClick={() => {
-                      onHighlightPath?.([link.source, link.target]);
-                      onToast?.(`Highlighted candidate link: ${link.sourceLabel} ↔ ${link.targetLabel}`);
-                    }}
-                  >
-                    <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                      <span style={{ fontWeight: 600, color: "var(--text)" }}>{link.sourceLabel}</span>
-                      <ArrowRight size={10} color="var(--text-muted)" />
-                      <span style={{ fontWeight: 600, color: "var(--text)" }}>{link.targetLabel}</span>
+                results.data.map((link, idx) => {
+                  const sLabel = link.source_label || link.sourceLabel || link.source;
+                  const tLabel = link.target_label || link.targetLabel || link.target;
+                  const scoreVal = typeof link.score === "number" ? link.score : parseFloat(link.score) || 0;
+                  const displayScore = scoreVal > 1 ? scoreVal.toFixed(1) : `${(scoreVal * 100).toFixed(1)}%`;
+
+                  return (
+                    <div
+                      key={idx}
+                      className="analysis-link-row"
+                      style={{
+                        padding: "8px 12px",
+                        background: "var(--panel-2)",
+                        border: "1px solid var(--border-2)",
+                        borderRadius: "var(--radius)",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "space-between",
+                        fontSize: "12px",
+                        cursor: "pointer",
+                        transition: "all 0.18s cubic-bezier(0.16, 1, 0.3, 1)",
+                        boxShadow: "0 1px 3px rgba(0, 0, 0, 0.1)",
+                      }}
+                      onMouseEnter={(e) => {
+                        e.currentTarget.style.background = "var(--panel-hover)";
+                        e.currentTarget.style.borderColor = "var(--teal)";
+                        e.currentTarget.style.transform = "translateY(-1px)";
+                      }}
+                      onMouseLeave={(e) => {
+                        e.currentTarget.style.background = "var(--panel-2)";
+                        e.currentTarget.style.borderColor = "var(--border-2)";
+                        e.currentTarget.style.transform = "translateY(0)";
+                      }}
+                      onClick={() => {
+                        onHighlightPath?.([link.source, link.target]);
+                        onToast?.(`Highlighted candidate link: ${sLabel} ↔ ${tLabel}`);
+                      }}
+                    >
+                      <div style={{ display: "flex", alignItems: "center", gap: 7, flex: 1, minWidth: 0 }}>
+                        <span style={{ fontWeight: 600, color: "var(--text)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                          {sLabel}
+                        </span>
+                        <ArrowRight size={11} color="var(--teal)" style={{ flexShrink: 0 }} />
+                        <span style={{ fontWeight: 600, color: "var(--text)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                          {tLabel}
+                        </span>
+                      </div>
+                      <span style={{ color: "var(--teal)", fontWeight: 700, fontSize: "11px", marginLeft: 8, flexShrink: 0 }}>
+                        {displayScore}
+                      </span>
                     </div>
-                    <span style={{ color: "var(--blue)", fontWeight: 700, fontSize: "10.5px" }}>
-                      {(link.score * 100).toFixed(1)}%
-                    </span>
-                  </div>
-                ))
+                  );
+                })
               )}
             </div>
           )}
